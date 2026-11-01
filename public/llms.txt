@@ -1,6 +1,6 @@
 # 4image
 
-> Image-first viewer for 4chan boards and threads. A thread opens as a grid of its images, with an optional text mode for reading the posts. All content belongs to 4chan and its posters; 4image stores nothing.
+> Image-first viewer for 4chan boards and threads. A thread opens as a grid of its images, with an optional text mode for reading the posts. All content belongs to 4chan and its posters; 4image keeps only a short-lived cache.
 
 ## Pages
 
@@ -12,8 +12,8 @@
 
 - To read boards and threads, use the official 4chan API instead of these pages: `https://a.4cdn.org/boards.json`, `https://a.4cdn.org/{board}/catalog.json`, `https://a.4cdn.org/{board}/thread/{no}.json`. Docs: https://github.com/4chan/4chan-API
 - Make at most one request per second, and refresh a thread no more than once every 10 seconds.
-- `/api/` on this site is a small cache for the 4image interface, not a public API. Please do not crawl it.
-- Images and videos are served from `https://i.4cdn.org`. Link to them rather than re-hosting them.
+- `/api/` and `/img/` on this site are short-lived caches of 4chan data and files for the 4image interface, not a public API. Please do not crawl them.
+- The original images and videos live on `https://i.4cdn.org/{board}/{file}`. Link there rather than re-hosting them.
 - Threads expire, so links to them stop working after a while.
 - Many boards are not safe for work. `ws_board` in `boards.json` says which are.
 
