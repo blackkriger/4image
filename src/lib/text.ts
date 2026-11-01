@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import type { Post } from './api';
 
 const THREAD_LINK = /^\/(\w+)\/thread\/(\d+)/;
 
@@ -29,6 +30,18 @@ export function plainText(html: string): string {
 
 export function quotedIn(html: string): number[] {
   return [...html.matchAll(/href="#p(\d+)"/g)].map((m) => Number(m[1]));
+}
+
+export function backlinksOf(posts: Iterable<Post>): Map<number, number[]> {
+  const map = new Map<number, number[]>();
+  for (const p of posts) {
+    for (const n of new Set(quotedIn(p.com ?? ''))) {
+      const list = map.get(n);
+      if (list) list.push(p.no);
+      else map.set(n, [p.no]);
+    }
+  }
+  return map;
 }
 
 export type PostLink = { board: string; thread: string } | { post: number };
