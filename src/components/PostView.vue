@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { CornerDownRight } from 'lucide-vue-next';
 import type { Post } from '../lib/api';
 import { formatSize, type Media } from '../lib/media';
-import { plainText, sanitize } from '../lib/text';
+import { plainText, postBody } from '../lib/text';
 import LazyImage from './LazyImage.vue';
 
 const props = defineProps<{ post: Post; media: Media | null; op: number; backlinks?: number[] }>();
@@ -11,9 +11,7 @@ const emit = defineEmits<{ (e: 'open', no: number): void }>();
 
 const subject = computed(() => plainText(props.post.sub ?? ''));
 const date = computed(() => props.post.now.replace(/\s*\((\w+)\)\s*/, ' ($1) '));
-const body = computed(() =>
-  sanitize(props.post.com ?? '').replaceAll(`&gt;&gt;${props.op}</a>`, `&gt;&gt;${props.op} (OP)</a>`),
-);
+const body = computed(() => postBody(props.post.com ?? '', props.op));
 const thumb = computed(() => {
   const m = props.media;
   if (!m) return null;

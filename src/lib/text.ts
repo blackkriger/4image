@@ -17,6 +17,10 @@ export function sanitize(html: string): string {
   });
 }
 
+export function postBody(html: string, op: number): string {
+  return sanitize(html).replaceAll(`&gt;&gt;${op}</a>`, `&gt;&gt;${op} (OP)</a>`);
+}
+
 export function plainText(html: string): string {
   if (!html) return '';
   const doc = new DOMParser().parseFromString(html.replace(/<br\s*\/?>/g, ' '), 'text/html');

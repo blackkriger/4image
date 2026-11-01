@@ -3,12 +3,15 @@ import { computed, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ExternalLink, X } from 'lucide-vue-next';
 import { formatSize, type Media } from '../lib/media';
-import { postLink } from '../lib/text';
+import type { Post } from '../lib/api';
+import { useQuotePopups } from '../lib/popups';
+import { postBody, postLink } from '../lib/text';
 import { stored } from '../lib/storage';
 import ViewerStrip from './ViewerStrip.vue';
+import QuotePopups from './QuotePopups.vue';
 
-const props = defineProps<{ items: Media[]; index: number | null; postHtml: (no: number) => string }>();
-const emit = defineEmits<{ (e: 'update:index', v: number | null): void }>();
+const props = defineProps<{ items: Media[]; index: number | null; byNo: Map<number, Post>; op: number }>();
+const emit = defineEmits<{ (e: 'update:index', v: number | null): void; (e: 'quote', no: number): void }>();
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 6;
@@ -33,7 +36,9 @@ const open = computed(
 );
 const current = computed(() => (open.value ? props.items[props.index as number] : null));
 const count = computed(() => props.items.length);
-const text = computed(() => (current.value && showText.value ? props.postHtml(current.value.no) : ''));
+const text = computed(() => (current.value && showText.value ? postBody(props.byNo.get(current.value.no)?.com ?? '', props.op) : ''));
+const mediaByNo = computed(() => new Map(props.items.map((m) => [m.no, m])));
+const quotes = useQuotePopups(() => props.byNo);
 
 const router = useRouter();
 
@@ -50,7 +55,12 @@ function onPostClick(e: MouseEvent): void {
     router.push(`/${link.board}/${link.thread}`);
     return;
   }
-  const i = props.items.findIndex((m) => m.no === link.post);
+  quotes.close();
+  emit('quote', link.post);
+}
+
+function openMedia(no: number): void {
+  const i = props.items.findIndex((m) => m.no === no);
   if (i >= 0) emit('update:index', i);
 }
 
@@ -197,19 +207,21 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
             @dblclick="resetView"
           />
         </div>
-        <aside
-          v-if="showText"
-          class="viewer__post"
-          :style="{ '--dx': `${postPos.x}px`, '--dy': `${postPos.y}px` }"
-          @pointerdown="onPostDown"
-          @pointermove="onPostMove"
-          @pointerup="onPostUp"
-          @pointercancel="onPostUp"
-        >
-          <span class="mono viewer__dim">No.{{ current.no }}</span>
-          <div v-if="text" class="postbody" @click="onPostClick" v-html="text"></div>
-          <span v-else class="viewer__dim">No text</span>
-        </aside>
+        <div v-if="showText" class="viewer__quotes" @mouseover="quotes.onOver" @mouseout="quotes.onOut" @click="onPostClick">
+          <aside
+            class="viewer__post"
+            :style="{ '--dx': `${postPos.x}px`, '--dy': `${postPos.y}px` }"
+            @pointerdown="onPostDown"
+            @pointermove="onPostMove"
+            @pointerup="onPostUp"
+            @pointercancel="onPostUp"
+          >
+            <span class="mono viewer__dim">No.{{ current.no }}</span>
+            <div v-if="text" class="postbody" v-html="text"></div>
+            <span v-else class="viewer__dim">No text</span>
+          </aside>
+          <QuotePopups :popups="quotes.shown.value" :by-no="byNo" :media="mediaByNo" :op="op" @open="openMedia" />
+        </div>
       </div>
     </div>
   </Teleport>

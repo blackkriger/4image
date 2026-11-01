@@ -888,6 +888,16 @@ button {
   cursor: grabbing;
 }
 
+.viewer__quotes {
+  display: contents;
+}
+
+.viewer .popup {
+  border-color: var(--line);
+  background: rgba(24, 24, 27, 0.96);
+  user-select: text;
+}
+
 .viewer__post {
   position: absolute;
   top: 50%;

@@ -5,7 +5,7 @@ import { ArrowUp, ChevronLeft, ExternalLink, X } from 'lucide-vue-next';
 import { failStatus, loadThread, type LoadStatus, type Post } from '../lib/api';
 import { stats, type ThreadCard } from '../lib/cards';
 import { gridTile, mediaOf, skeletonRatios } from '../lib/media';
-import { plainText, sanitize } from '../lib/text';
+import { plainText } from '../lib/text';
 import { setTitle } from '../lib/title';
 import { hintIfCut } from '../lib/hint';
 import { stored } from '../lib/storage';
@@ -116,7 +116,6 @@ watch(
   { immediate: true },
 );
 
-const postHtml = (n: number): string => sanitize(postsByNo.value.get(n)?.com ?? '');
 
 function openMedia(n: number): void {
   const i = media.value.findIndex((m) => m.no === n);
@@ -141,6 +140,13 @@ async function setTextMode(on: boolean): Promise<void> {
   if (anchor == null || !scroller.value) return;
   const els = [...scroller.value.querySelectorAll<HTMLElement>('[data-no]')];
   els.find((el) => Number(el.dataset.no) >= anchor)?.scrollIntoView({ block: 'start' });
+}
+
+async function jumpToPost(n: number): Promise<void> {
+  viewer.value = null;
+  if (!textMode.value) await setTextMode(true);
+  await nextTick();
+  document.getElementById(`p${n}`)?.scrollIntoView({ block: 'start' });
 }
 
 function onScroll(): void {
@@ -251,7 +257,7 @@ onBeforeUnmount(() => {
         <div class="justify__end" aria-hidden="true"></div>
       </div>
 
-      <ImageViewer v-model:index="viewer" :items="media" :post-html="postHtml" />
+      <ImageViewer v-model:index="viewer" :items="media" :by-no="postsByNo" :op="op?.no ?? 0" @quote="jumpToPost" />
     </div>
   </div>
 </template>
