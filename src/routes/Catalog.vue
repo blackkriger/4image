@@ -6,6 +6,7 @@ import { stats, toCard, type ThreadCard } from '../lib/cards';
 import { skeletonRatios, tile } from '../lib/media';
 import { stored } from '../lib/storage';
 import { setTitle } from '../lib/title';
+import { hintIfCut } from '../lib/hint';
 import LazyImage from '../components/LazyImage.vue';
 
 type Sort = 'bump' | 'images' | 'replies' | 'new';
@@ -99,7 +100,7 @@ const shown = computed(() => {
         <div class="card__thumb" :style="{ aspectRatio: c.style.aspectRatio }">
           <LazyImage v-if="c.image" :src="c.image" :thumb="c.thumb" />
         </div>
-        <div class="clamp card__text">
+        <div class="clamp card__text" @mouseenter="hintIfCut($event, `${c.subject} ${c.text}`.trim())">
           <strong v-if="c.subject">{{ c.subject }}</strong>
           {{ c.text }}
         </div>

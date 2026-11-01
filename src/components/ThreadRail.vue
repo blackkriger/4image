@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue';
 import { stats, type ThreadCard } from '../lib/cards';
+import { hintIfCut } from '../lib/hint';
 import LazyImage from './LazyImage.vue';
 
 const props = defineProps<{ board: string; threads: ThreadCard[]; current: number }>();
@@ -27,7 +28,7 @@ watch(
       <div class="rail__thumb" :style="{ aspectRatio: t.style.aspectRatio }">
         <LazyImage v-if="t.image" :src="t.image" :thumb="t.thumb" />
       </div>
-      <span class="clamp rail__title">
+      <span class="clamp rail__title" @mouseenter="hintIfCut($event, `${t.subject} ${t.text}`.trim())">
         <strong v-if="t.subject">{{ t.subject }}</strong>
         {{ t.text }}
       </span>

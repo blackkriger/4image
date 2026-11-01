@@ -547,6 +547,19 @@ button {
   margin: 3px 0;
 }
 
+.slide-enter-active,
+.slide-leave-active {
+  overflow: hidden;
+  transition: width 0.2s, margin 0.2s, opacity 0.2s;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  width: 0;
+  margin-left: -16px;
+  opacity: 0;
+}
+
 .threadbar__nav {
   display: flex;
   gap: 6px;
@@ -935,6 +948,11 @@ button {
 
   .threadbar__in {
     gap: 8px 6px;
+  }
+
+  .slide-enter-from,
+  .slide-leave-to {
+    margin-left: -6px;
   }
 
   .threadbar__title {

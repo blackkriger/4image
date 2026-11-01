@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ChevronLeft, ExternalLink, X } from 'lucide-vue-next';
+import { ArrowUp, ChevronLeft, ExternalLink, X } from 'lucide-vue-next';
 import { failStatus, loadThread, type LoadStatus, type Post } from '../lib/api';
 import { stats, type ThreadCard } from '../lib/cards';
 import { gridTile, mediaOf, skeletonRatios } from '../lib/media';
 import { plainText, sanitize } from '../lib/text';
 import { setTitle } from '../lib/title';
+import { hintIfCut } from '../lib/hint';
 import { stored } from '../lib/storage';
 import TopBar from '../components/TopBar.vue';
 import ThreadRail from '../components/ThreadRail.vue';
@@ -19,6 +20,7 @@ const TEXT_KEY = '4image:text';
 const SKELETON = skeletonRatios(18).map((ar) => gridTile(ar, 1));
 const REFRESH_MS = 20000;
 const MAX_REFRESH_MS = 60000;
+const TOP_BUTTON_PX = 600;
 
 const props = defineProps<{ threads: ThreadCard[] }>();
 
@@ -34,6 +36,7 @@ const textMode = ref(stored.get(TEXT_KEY) === '1');
 const viewerNo = ref<number | null>(null);
 const state = ref<'live' | 'closed' | 'archived' | 'deleted'>('live');
 const scroller = ref<HTMLElement | null>(null);
+const scrolled = ref(false);
 
 const op = computed(() => posts.value[0]);
 const card = computed(() => props.threads.find((t) => t.no === no.value));
@@ -140,10 +143,12 @@ async function setTextMode(on: boolean): Promise<void> {
   els.find((el) => Number(el.dataset.no) >= anchor)?.scrollIntoView({ block: 'start' });
 }
 
-function titleHint(e: MouseEvent): void {
-  const el = e.currentTarget as HTMLElement;
-  if (el.scrollWidth > el.clientWidth) el.title = title.value;
-  else el.removeAttribute('title');
+function onScroll(): void {
+  scrolled.value = (scroller.value?.scrollTop ?? 0) > TOP_BUTTON_PX;
+}
+
+function toTop(): void {
+  scroller.value?.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function onKey(e: KeyboardEvent): void {
@@ -165,7 +170,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="thread">
     <ThreadRail :board="board" :threads="threads" :current="no" />
-    <div ref="scroller" class="thread__main">
+    <div ref="scroller" class="thread__main" @scroll.passive="onScroll">
       <TopBar />
       <div class="threadbar">
         <div class="wrap wrap--full threadbar__in">
@@ -173,8 +178,13 @@ onBeforeUnmount(() => {
             <ChevronLeft class="ic" />
             <span class="threadbar__back">Catalog</span>
           </RouterLink>
+          <Transition name="slide">
+            <button v-if="scrolled" type="button" class="btn btn--icon" aria-label="Back to top" @click="toTop">
+              <ArrowUp class="ic" />
+            </button>
+          </Transition>
           <div class="threadbar__title">
-            <h1 v-if="title" @mouseenter="titleHint">{{ title }}</h1>
+            <h1 v-if="title" @mouseenter="hintIfCut($event, title)">{{ title }}</h1>
             <span v-else-if="status === 'loading'" class="sk sk-line threadbar__sk-title"></span>
             <div v-if="op" class="mono muted small">
               {{ stats(media.length, op.replies ?? 0) }}<template v-if="state === 'live'">, <UpdatedAgo :at="updatedAt" /></template><template v-else>, {{ state }}</template>
