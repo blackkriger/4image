@@ -646,6 +646,15 @@ button {
   background-image: var(--thumb);
 }
 
+.nopic,
+:has(> img.media[data-failed]) {
+  background: repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in srgb, var(--muted) 30%, transparent) 8px 10px), var(--ph);
+}
+
+img.media[data-failed] {
+  visibility: hidden;
+}
+
 .thread__posts {
   max-width: 808px;
   margin: 0 auto;

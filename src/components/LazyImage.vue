@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { markLoaded } from '../lib/media';
+import { markFailed, markLoaded } from '../lib/media';
 import { observeNear, unobserveNear } from '../lib/inview';
 
 const props = defineProps<{ src: string; thumb?: string | null }>();
@@ -26,6 +26,6 @@ onBeforeUnmount(() => {
     loading="lazy"
     decoding="async"
     @load="markLoaded"
-    @error="markLoaded"
+    @error="markFailed"
   />
 </template>

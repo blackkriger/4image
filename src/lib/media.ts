@@ -39,6 +39,11 @@ export function markLoaded(e: Event): void {
   (e.target as HTMLElement).setAttribute('data-loaded', '');
 }
 
+export function markFailed(e: Event): void {
+  (e.target as HTMLElement).setAttribute('data-loaded', '');
+  (e.target as HTMLElement).setAttribute('data-failed', '');
+}
+
 export function formatSize(bytes: number): string {
   return bytes >= 1048576 ? `${(bytes / 1048576).toFixed(2)} MB` : `${Math.round(bytes / 1024)} KB`;
 }

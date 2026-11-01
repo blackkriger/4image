@@ -25,7 +25,7 @@ watch(
 <template>
   <nav ref="rail" class="rail" aria-label="Threads">
     <RouterLink v-for="t in threads" :key="t.no" :to="`/${board}/${t.no}`" class="rail__item">
-      <div class="rail__thumb" :style="{ aspectRatio: t.style.aspectRatio }">
+      <div class="rail__thumb" :class="{ nopic: !t.image }" :style="{ aspectRatio: t.style.aspectRatio }">
         <LazyImage v-if="t.image" :src="t.image" :thumb="t.thumb" />
       </div>
       <span class="clamp rail__title" @mouseenter="hintIfCut($event, `${t.subject} ${t.text}`.trim())">

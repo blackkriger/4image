@@ -97,7 +97,7 @@ const shown = computed(() => {
         </div>
       </template>
       <RouterLink v-for="c in shown" :key="c.no" :to="`/${board}/${c.no}`" class="card" :style="{ flex: c.style.flex }">
-        <div class="card__thumb" :style="{ aspectRatio: c.style.aspectRatio }">
+        <div class="card__thumb" :class="{ nopic: !c.image }" :style="{ aspectRatio: c.style.aspectRatio }">
           <LazyImage v-if="c.image" :src="c.image" :thumb="c.thumb" />
         </div>
         <div class="clamp card__text" @mouseenter="hintIfCut($event, `${c.subject} ${c.text}`.trim())">
