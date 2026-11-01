@@ -260,7 +260,6 @@ button {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-left: auto;
   font-size: 13px;
   color: var(--muted);
   white-space: nowrap;
@@ -286,7 +285,7 @@ button {
 
 .themetoggle {
   display: inline-flex;
-  margin-left: 12px;
+  margin-left: auto;
   padding: 0;
   border: 0;
   background: transparent;
@@ -932,10 +931,6 @@ button {
   .viewer__name,
   .viewer__meta {
     display: none;
-  }
-
-  .topbar__links--wide + .themetoggle {
-    margin-left: auto;
   }
 
   .threadbar__in {
