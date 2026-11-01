@@ -260,6 +260,7 @@ button {
   display: flex;
   align-items: center;
   gap: 16px;
+  margin-left: auto;
   font-size: 13px;
   color: var(--muted);
   white-space: nowrap;
@@ -267,6 +268,23 @@ button {
 
 .topbar__links a {
   font-weight: 600;
+  text-decoration: none;
+}
+
+.topbar__by a {
+  color: var(--text);
+}
+
+.topbar__by a:hover {
+  color: var(--accent);
+}
+
+.topbar__icons {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-left: 16px;
+  border-left: 1px solid var(--line);
 }
 
 .topbar__repo {
@@ -285,7 +303,6 @@ button {
 
 .themetoggle {
   display: inline-flex;
-  margin-left: auto;
   padding: 0;
   border: 0;
   background: transparent;
@@ -944,6 +961,12 @@ button {
   .viewer__name,
   .viewer__meta {
     display: none;
+  }
+
+  .topbar__links--wide + .topbar__icons {
+    margin-left: auto;
+    padding-left: 0;
+    border-left: 0;
   }
 
   .threadbar__in {
