@@ -32,7 +32,7 @@ const status = ref<LoadStatus>('loading');
 const updatedAt = ref(0);
 const textMode = ref(stored.get(TEXT_KEY) === '1');
 const viewerNo = ref<number | null>(null);
-const ended = ref(false);
+const state = ref<'live' | 'closed' | 'archived' | 'deleted'>('live');
 const scroller = ref<HTMLElement | null>(null);
 
 const op = computed(() => posts.value[0]);
@@ -55,7 +55,7 @@ const viewer = computed<number | null>({
 });
 
 const signature = (list: Post[]): string =>
-  `${list.length}:${list.at(-1)?.no}:${list.filter((p) => p.filedeleted).length}:${list[0]?.archived ?? 0}`;
+  `${list.length}:${list.at(-1)?.no}:${list.filter((p) => p.filedeleted).length}:${list[0]?.archived ?? 0}:${list[0]?.closed ?? 0}`;
 
 async function load(): Promise<boolean> {
   const b = board.value;
@@ -64,14 +64,14 @@ async function load(): Promise<boolean> {
     const list = await loadThread(b, n);
     if (b !== board.value || n !== no.value) return false;
     updatedAt.value = Date.now();
-    ended.value = !!list[0]?.archived;
+    state.value = list[0]?.archived ? 'archived' : list[0]?.closed ? 'closed' : 'live';
     const changed = signature(list) !== signature(posts.value);
     if (changed) posts.value = list;
     status.value = 'ready';
     return changed;
   } catch (e) {
     if (b !== board.value || n !== no.value) return false;
-    if (status.value === 'ready') ended.value = failStatus(e) === 'missing';
+    if (status.value === 'ready' && failStatus(e) === 'missing') state.value = 'deleted';
     else status.value = failStatus(e);
     return false;
   }
@@ -83,7 +83,7 @@ let delay = REFRESH_MS;
 function schedule(): void {
   clearTimeout(timer);
   timer = window.setTimeout(async () => {
-    if (document.visibilityState === 'visible' && status.value === 'ready' && !ended.value) {
+    if (document.visibilityState === 'visible' && status.value === 'ready' && (state.value === 'live' || state.value === 'closed')) {
       delay = (await load()) ? REFRESH_MS : Math.min(delay * 1.5, MAX_REFRESH_MS);
     }
     schedule();
@@ -95,7 +95,7 @@ watch(
   () => {
     posts.value = [];
     status.value = 'loading';
-    ended.value = false;
+    state.value = 'live';
     viewerNo.value = null;
     delay = REFRESH_MS;
     scroller.value?.scrollTo({ top: 0 });
@@ -177,7 +177,7 @@ onBeforeUnmount(() => {
             <h1 v-if="title" @mouseenter="titleHint">{{ title }}</h1>
             <span v-else-if="status === 'loading'" class="sk sk-line threadbar__sk-title"></span>
             <div v-if="op" class="mono muted small">
-              {{ stats(media.length, op.replies ?? 0) }}<template v-if="!ended">, <UpdatedAgo :at="updatedAt" /></template>
+              {{ stats(media.length, op.replies ?? 0) }}<template v-if="state === 'live'">, <UpdatedAgo :at="updatedAt" /></template><template v-else>, {{ state }}</template>
             </div>
             <div v-else-if="card" class="mono muted small">{{ stats(card.images, card.replies) }}</div>
             <span v-else-if="status === 'loading'" class="sk sk-line threadbar__sk-meta"></span>

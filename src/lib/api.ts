@@ -22,6 +22,7 @@ export interface Post {
   images?: number;
   last_modified?: number;
   archived?: number;
+  closed?: number;
 }
 
 export type LoadStatus = 'loading' | 'ready' | 'missing' | 'failed';
