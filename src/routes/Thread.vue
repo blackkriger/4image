@@ -17,7 +17,7 @@ import ImageViewer from '../components/ImageViewer.vue';
 import UpdatedAgo from '../components/UpdatedAgo.vue';
 
 const TEXT_KEY = '4image:text';
-const SKELETON = skeletonRatios(18).map((ar) => gridTile(ar, 1));
+const SKELETON = skeletonRatios(6).map((ar) => gridTile(ar, 1));
 const REFRESH_MS = 20000;
 const MAX_REFRESH_MS = 60000;
 const TOP_BUTTON_PX = 600;

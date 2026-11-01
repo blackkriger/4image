@@ -7,7 +7,7 @@ import { skeletonRatios, tile } from '../lib/media';
 import { stored } from '../lib/storage';
 import { setTitle } from '../lib/title';
 import { hintIfCut } from '../lib/hint';
-import LazyImage from '../components/LazyImage.vue';
+import MediaThumb from '../components/MediaThumb.vue';
 
 type Sort = 'bump' | 'images' | 'replies' | 'new';
 
@@ -97,8 +97,8 @@ const shown = computed(() => {
         </div>
       </template>
       <RouterLink v-for="c in shown" :key="c.no" :to="`/${board}/${c.no}`" class="card" :style="{ flex: c.style.flex }">
-        <div class="card__thumb" :class="{ nopic: !c.image }" :style="{ aspectRatio: c.style.aspectRatio }">
-          <LazyImage v-if="c.image" :src="c.image" :thumb="c.thumb" />
+        <div class="card__thumb" :class="{ nopic: !c.media }" :style="{ aspectRatio: c.style.aspectRatio }">
+          <MediaThumb v-if="c.media" :m="c.media" />
         </div>
         <div class="clamp card__text" @mouseenter="hintIfCut($event, `${c.subject} ${c.text}`.trim())">
           <strong v-if="c.subject">{{ c.subject }}</strong>
