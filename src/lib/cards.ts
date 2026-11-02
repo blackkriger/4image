@@ -6,8 +6,8 @@ export interface ThreadCard {
   no: number;
   subject: string;
   text: string;
-  replies: number;
-  images: number;
+  replies: number | null;
+  images: number | null;
   media: Media | null;
   style: { flex: string; aspectRatio: string };
 }
@@ -18,8 +18,8 @@ export function toCard(board: string, t: Post): ThreadCard {
     no: t.no,
     subject: plainText(t.sub ?? ''),
     text: plainText(t.com ?? ''),
-    replies: t.replies ?? 0,
-    images: (t.images ?? 0) + (m ? 1 : 0),
+    replies: t.replies ?? null,
+    images: t.images == null ? null : t.images + (m ? 1 : 0),
     media: m,
     style: tile(m?.w ?? 1, m?.h ?? 1),
   };

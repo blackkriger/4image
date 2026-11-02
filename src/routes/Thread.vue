@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { ArrowUp, ChevronLeft, ExternalLink, X } from 'lucide-vue-next';
 import { failStatus, loadThread, type LoadStatus, type Post } from '../lib/api';
+import { archiveOf, archiveUrl, boardPath, loadArchivedThread } from '../lib/archives';
 import { stats, type ThreadCard } from '../lib/cards';
 import { gridTile, mediaOf, skeletonRatios } from '../lib/media';
 import { plainText } from '../lib/text';
@@ -28,6 +29,8 @@ const route = useRoute();
 const router = useRouter();
 const board = computed(() => route.params.board as string);
 const no = computed(() => Number(route.params.thread));
+const archive = computed(() => !!route.meta.archive);
+const base = computed(() => boardPath(board.value, archive.value));
 
 const posts = ref<Post[]>([]);
 const status = ref<LoadStatus>('loading');
@@ -37,6 +40,8 @@ const viewerNo = ref<number | null>(null);
 const state = ref<'live' | 'closed' | 'archived' | 'deleted'>('live');
 const scroller = ref<HTMLElement | null>(null);
 const scrolled = ref(false);
+const source = ref<string | undefined>();
+const external = computed(() => (source.value ? archiveUrl(board.value, no.value) : `https://boards.4chan.org/${board.value}/thread/${no.value}`));
 
 const op = computed(() => posts.value[0]);
 const card = computed(() => props.threads.find((t) => t.no === no.value));
@@ -65,20 +70,32 @@ const viewer = computed<number | null>({
 const signature = (list: Post[]): string =>
   `${list.length}:${list.at(-1)?.no}:${list.filter((p) => p.filedeleted).length}:${list[0]?.archived ?? 0}:${list[0]?.closed ?? 0}`;
 
+async function fetchThread(b: string, n: number): Promise<{ list: Post[]; from?: string }> {
+  if (archive.value) return { list: await loadArchivedThread(b, n), from: archiveOf(b) };
+  try {
+    return { list: await loadThread(b, n) };
+  } catch (e) {
+    if (failStatus(e) !== 'missing' || status.value === 'ready' || !archiveOf(b)) throw e;
+    return { list: await loadArchivedThread(b, n), from: archiveOf(b) };
+  }
+}
+
 async function load(): Promise<boolean> {
   const b = board.value;
   const n = no.value;
+  const a = archive.value;
   try {
-    const list = await loadThread(b, n);
-    if (b !== board.value || n !== no.value) return false;
+    const { list, from } = await fetchThread(b, n);
+    if (b !== board.value || n !== no.value || a !== archive.value) return false;
     updatedAt.value = Date.now();
+    source.value = from;
     state.value = list[0]?.archived ? 'archived' : list[0]?.closed ? 'closed' : 'live';
     const changed = signature(list) !== signature(posts.value);
     if (changed) posts.value = list;
     status.value = 'ready';
     return changed;
   } catch (e) {
-    if (b !== board.value || n !== no.value) return false;
+    if (b !== board.value || n !== no.value || a !== archive.value) return false;
     if (status.value === 'ready' && failStatus(e) === 'missing') state.value = 'deleted';
     else status.value = failStatus(e);
     return false;
@@ -99,11 +116,12 @@ function schedule(): void {
 }
 
 watch(
-  [board, no],
+  [board, no, archive],
   () => {
     posts.value = [];
     status.value = 'loading';
     state.value = 'live';
+    source.value = undefined;
     viewerNo.value = null;
     delay = REFRESH_MS;
     scroller.value?.scrollTo({ top: 0 });
@@ -163,7 +181,7 @@ function toTop(): void {
 }
 
 function onKey(e: KeyboardEvent): void {
-  if (e.key === 'Escape' && viewer.value == null) router.push(`/${board.value}`);
+  if (e.key === 'Escape' && viewer.value == null) router.push(base.value);
 }
 
 onMounted(() => {
@@ -180,12 +198,12 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="thread">
-    <ThreadRail :board="board" :threads="railThreads" :current="no" />
+    <ThreadRail :base="base" :threads="railThreads" :current="no" />
     <div ref="scroller" class="thread__main" @scroll.passive="onScroll">
-      <TopBar />
+      <TopBar :source="source" />
       <div class="threadbar">
         <div class="wrap wrap--full threadbar__in">
-          <RouterLink :to="`/${board}`" class="btn">
+          <RouterLink :to="base" class="btn">
             <ChevronLeft class="ic" />
             <span class="threadbar__back">Catalog</span>
           </RouterLink>
@@ -198,9 +216,9 @@ onBeforeUnmount(() => {
             <h1 v-if="title" @mouseenter="hintIfCut($event, title)">{{ title }}</h1>
             <span v-else-if="status === 'loading'" class="sk sk-line threadbar__sk-title"></span>
             <div v-if="op" class="mono muted small">
-              {{ stats(media.length, op.replies ?? 0) }}<template v-if="state === 'live'">, <UpdatedAgo :at="updatedAt" /></template><template v-else>, {{ state }}</template>
+              {{ stats(media.length, op.replies ?? 0) }}<template v-if="state === 'live'">, <UpdatedAgo :at="updatedAt" /></template><template v-else>, {{ state }}<template v-if="source">, <a :href="external" target="_blank" rel="noopener noreferrer">{{ source }}</a></template></template>
             </div>
-            <div v-else-if="card" class="mono muted small">{{ stats(card.images, card.replies) }}</div>
+            <div v-else-if="card && card.images != null && card.replies != null" class="mono muted small">{{ stats(card.images, card.replies) }}</div>
             <span v-else-if="status === 'loading'" class="sk sk-line threadbar__sk-meta"></span>
           </div>
           <button type="button" class="btn" :aria-pressed="textMode" @click="setTextMode(!textMode)">
@@ -208,10 +226,10 @@ onBeforeUnmount(() => {
             Text
           </button>
           <div class="threadbar__nav">
-            <a :href="`https://boards.4chan.org/${board}/thread/${no}`" target="_blank" rel="noopener noreferrer" class="btn btn--icon" aria-label="Open on 4chan">
+            <a :href="external" target="_blank" rel="noopener noreferrer" class="btn btn--icon" :aria-label="source ? `Open on ${source}` : 'Open on 4chan'">
               <ExternalLink class="ic" />
             </a>
-            <RouterLink :to="`/${board}`" class="btn btn--icon" aria-label="Close thread">
+            <RouterLink :to="base" class="btn btn--icon" aria-label="Close thread">
               <X class="ic" />
             </RouterLink>
           </div>

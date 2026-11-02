@@ -1,18 +1,27 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { loadBoards } from '../lib/api';
+import { archiveOf, boardPath } from '../lib/archives';
 import { groupBoards, type BoardGroup } from '../lib/boards';
 import { setTitle } from '../lib/title';
 
 const SKELETON = [8, 10, 15, 14, 10, 6, 13];
 
-const groups = ref<BoardGroup[]>([]);
+const route = useRoute();
+const archive = computed(() => !!route.meta.archive);
+const all = ref<BoardGroup[]>([]);
 const failed = ref(false);
+const groups = computed(() =>
+  archive.value
+    ? all.value.map((g) => ({ ...g, boards: g.boards.filter((b) => archiveOf(b.board)) })).filter((g) => g.boards.length)
+    : all.value,
+);
 
 onMounted(async () => {
   setTitle();
   try {
-    groups.value = groupBoards(await loadBoards());
+    all.value = groupBoards(await loadBoards());
   } catch {
     failed.value = true;
   }
@@ -35,7 +44,7 @@ onMounted(async () => {
     <div class="boards">
       <section v-for="g in groups" :key="g.title" class="boards__group">
         <h2 class="label">{{ g.title }}<span v-if="g.nsfw" class="accent"> (NSFW)</span></h2>
-        <RouterLink v-for="b in g.boards" :key="b.board" :to="`/${b.board}`" class="boardrow">
+        <RouterLink v-for="b in g.boards" :key="b.board" :to="boardPath(b.board, archive)" class="boardrow">
           <span class="mono boardrow__code">/{{ b.board }}/</span>
           <span>{{ b.title }}</span>
         </RouterLink>

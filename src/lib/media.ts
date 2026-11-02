@@ -25,13 +25,13 @@ export function mediaOf(board: string, p: Post): Media | null {
   if (p.tim == null || !p.ext || p.filedeleted || !MEDIA.includes(p.ext)) return null;
   return {
     no: p.no,
-    src: `${CDN}/${board}/${p.tim}${p.ext}`,
-    thumb: `${CDN}/${board}/${p.tim}s.jpg`,
+    src: p.src ?? `${CDN}/${board}/${p.tim}${p.ext}`,
+    thumb: p.thumb ?? `${CDN}/${board}/${p.tim}s.jpg`,
     name: `${p.filename ?? p.tim}${p.ext}`,
     w: p.w || 1,
     h: p.h || 1,
     size: p.fsize ?? 0,
-    video: VIDEO.includes(p.ext),
+    video: !p.still && VIDEO.includes(p.ext),
   };
 }
 

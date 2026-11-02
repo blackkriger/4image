@@ -2,22 +2,31 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { Moon, Sun } from 'lucide-vue-next';
+import { archiveOf, boardPath } from '../lib/archives';
 import { dark, toggleTheme } from '../lib/theme';
+
+const props = defineProps<{ source?: string }>();
 
 const route = useRoute();
 const board = computed(() => route.params.board as string | undefined);
-const thread = computed(() => route.params.thread as string | undefined);
+const archived = computed(() => !!props.source || !!route.meta.archive);
+const modes = computed(() => (!board.value || archiveOf(board.value) ? [false, true] : []));
+const home = (archive: boolean): string => (board.value ? boardPath(board.value, archive) : archive ? '/archive' : '/');
 </script>
 
 <template>
   <header class="topbar">
     <div class="wrap wrap--full topbar__in">
       <RouterLink to="/" class="logo"><span>4</span>image</RouterLink>
-      <nav v-if="board" class="crumbs mono" aria-label="Breadcrumb">
-        <span aria-hidden="true">/</span>
-        <RouterLink :to="`/${board}`" :aria-current="thread ? undefined : 'page'">{{ board }}</RouterLink>
-        <span aria-hidden="true">/</span>
-        <span v-if="thread" aria-current="page" class="crumbs__here">{{ thread }}</span>
+      <nav class="crumbs mono" aria-label="Breadcrumb">
+        <template v-if="board">
+          <span aria-hidden="true">/</span>
+          <RouterLink :to="home(archived)" :aria-current="modes.length ? undefined : 'page'">{{ board }}</RouterLink>
+        </template>
+        <template v-if="modes.length">
+          <span aria-hidden="true">/</span>
+          <RouterLink v-for="a in modes" :key="String(a)" :to="home(a)" :aria-current="a === archived ? 'page' : undefined">{{ a ? 'archive' : 'live' }}</RouterLink>
+        </template>
       </nav>
       <div class="topbar__links" :class="{ 'topbar__links--wide': board }">
         <a href="https://boosty.to/blackkriger/donate" target="_blank" rel="noopener noreferrer">Help cover hosting</a>
