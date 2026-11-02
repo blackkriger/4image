@@ -690,13 +690,6 @@ button {
   min-width: 0;
 }
 
-.tile:has(> img.media[data-thumbed]) {
-  flex: none !important;
-  width: var(--tw);
-  height: var(--th);
-  aspect-ratio: auto !important;
-}
-
 .media {
   display: block;
   width: 100%;

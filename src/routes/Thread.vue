@@ -60,7 +60,7 @@ const railThreads = computed(() => {
 const tiles = computed(() =>
   media.value.map((m) => ({
     m,
-    style: { ...gridTile(m.w, m.h), '--tw': m.thumbW ? `${m.thumbW}px` : undefined, '--th': m.thumbH ? `${m.thumbH}px` : undefined },
+    style: m.still ? { flex: 'none', width: `${m.still.w}px`, height: `${m.still.h}px` } : gridTile(m.w, m.h),
   })),
 );
 const mediaByNo = computed(() => new Map(media.value.map((m) => [m.no, m])));

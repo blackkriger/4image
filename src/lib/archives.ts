@@ -1,4 +1,4 @@
-import { HttpError, type Post } from './api';
+import { HttpError, loadThread, type Post } from './api';
 
 const ARCHIVES: Record<string, string[]> = {
   'arch.b4k.dev': ['v', 'vg', 'vm', 'vmg', 'vp', 'vrpg', 'vst', 'qb'],
@@ -85,7 +85,7 @@ function fourchanTim(m: ArcMedia): number | null {
   }
 }
 
-function toPost(p: ArcPost, board: string): Post {
+function toPost(p: ArcPost, board: string, live?: Set<number>): Post {
   const no = Number(p.num);
   const thread = Number(p.thread_num);
   const post: Post = {
@@ -105,9 +105,11 @@ function toPost(p: ArcPost, board: string): Post {
   const name = m.media_filename ?? orig;
   const thumb = m.thumb_link ?? m.media_link ?? undefined;
   const tim = thumbsOnly(board) ? fourchanTim(m) : null;
-  const files = thumbsOnly(board)
-    ? { src: tim ? `/img/${board}/${tim}${ext}?archive=0` : thumb, fallback: thumb, still: tim ? undefined : 1 }
-    : { src: m.media_link ?? undefined };
+  const files = !thumbsOnly(board)
+    ? { src: m.media_link ?? undefined }
+    : tim && live?.has(tim)
+      ? { src: `/img/${board}/${tim}${ext}?archive=0`, fallback: thumb }
+      : { src: thumb, still: 1 };
   return {
     ...post,
     tim: Number(orig.slice(0, dot)),
@@ -156,14 +158,24 @@ export function loadArchivedThread(board: string, no: number): Promise<Post[]> {
   return p;
 }
 
+async function liveFiles(board: string, no: number): Promise<Set<number>> {
+  if (!thumbsOnly(board)) return new Set();
+  try {
+    return new Set((await loadThread(board, no)).flatMap((p) => (p.tim != null && !p.filedeleted ? [p.tim] : [])));
+  } catch {
+    return new Set();
+  }
+}
+
 async function fetchArchivedThread(board: string, no: number): Promise<Post[]> {
-  const t = (await arc<Record<string, ArcThread>>(board, `thread/?board=${board}&num=${no}`))[no];
+  const [data, live] = await Promise.all([arc<Record<string, ArcThread>>(board, `thread/?board=${board}&num=${no}`), liveFiles(board, no)]);
+  const t = data[no];
   if (!t) throw new HttpError(404);
   const replies = repliesOf(t).sort((a, b) => Number(a.num) - Number(b.num));
-  const op = toPost(t.op, board);
+  const op = toPost(t.op, board, live);
   op.replies = replies.length;
   op.images = replies.filter(hasMedia).length;
-  return [op, ...replies.map((p) => toPost(p, board))];
+  return [op, ...replies.map((p) => toPost(p, board, live))];
 }
 
 export async function loadArchivePage(board: string, page: number): Promise<Post[]> {
