@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { Search } from 'lucide-vue-next';
 import { failStatus, loadBoards, loadCatalog, type LoadStatus, type Post } from '../lib/api';
@@ -26,6 +26,8 @@ const SKELETON = skeletonRatios(24).map((ar) => tile(ar, 1));
 const MORE_SKELETON = SKELETON.slice(0, 6);
 const MORE_PX = 800;
 const CHAIN_MS = 500;
+const REVEAL_MS = 90;
+const QUEUE_LOW = 8;
 const APPEAR_MS = 40;
 const APPEAR_MAX = 24;
 const SEARCH_MS = 400;
@@ -39,6 +41,10 @@ const title = ref('');
 const cards = ref<ThreadCard[]>([]);
 const total = ref<number | null>(null);
 const appear = new Map<number, number>();
+const queued = ref(0);
+let queue: ThreadCard[] = [];
+let pump = 0;
+let fetchedAt = 0;
 const status = ref<LoadStatus>('loading');
 const savedSort = stored.get(SORT_KEY);
 const sort = ref<Sort>(SORTS.some(([id]) => id === savedSort) ? (savedSort as Sort) : 'bump');
@@ -92,6 +98,8 @@ function restart(): void {
   const b = board.value;
   cards.value = [];
   appear.clear();
+  queue = [];
+  queued.value = 0;
   total.value = null;
   if (!searched.value) {
     countArchive(b)
@@ -110,6 +118,7 @@ function restart(): void {
 
 async function loadMore(): Promise<void> {
   if (busy.value || ended.value) return;
+  fetchedAt = Date.now();
   const id = run;
   const b = board.value;
   const q = searched.value;
@@ -133,14 +142,25 @@ async function loadMore(): Promise<void> {
     return;
   }
   if (id !== run) return;
-  const seen = new Set(cards.value.map((c) => c.no));
-  cards.value = [...cards.value, ...stagger(posts.filter((p) => !live.has(p.no) && !seen.has(p.no)).map((p) => archiveCard(b, p)))];
+  const seen = new Set([...cards.value, ...queue].map((c) => c.no));
+  const fresh = posts.filter((p) => !live.has(p.no) && !seen.has(p.no)).map((p) => archiveCard(b, p));
   page.value++;
   ended.value = !posts.length;
   busy.value = false;
-  status.value = 'ready';
-  await nextTick();
-  if (nearEnd()) setTimeout(() => id === run && nearEnd() && loadMore(), CHAIN_MS);
+  queue.push(...fresh);
+  queued.value = queue.length;
+  if (ended.value && !queue.length) status.value = 'ready';
+}
+
+function tick(): void {
+  if (!archive.value) return;
+  const c = queue.shift();
+  if (c) {
+    queued.value = queue.length;
+    cards.value = [...cards.value, c];
+    status.value = 'ready';
+  }
+  if (!moreFailed.value && queue.length < QUEUE_LOW && Date.now() - fetchedAt >= CHAIN_MS && nearEnd()) loadMore();
 }
 
 function stagger(list: ThreadCard[]): ThreadCard[] {
@@ -173,20 +193,13 @@ watch(query, () => {
   searchTimer = window.setTimeout(onSearch, SEARCH_MS);
 });
 
-const observer = new IntersectionObserver(
-  (entries) => {
-    if (archive.value && entries.some((e) => e.isIntersecting)) loadMore();
-  },
-  { rootMargin: `${MORE_PX}px` },
-);
-
 onMounted(() => {
-  if (sentinel.value) observer.observe(sentinel.value);
+  pump = window.setInterval(tick, REVEAL_MS);
 });
 onBeforeUnmount(() => {
   run++;
+  clearInterval(pump);
   clearTimeout(searchTimer);
-  observer.disconnect();
 });
 
 watch(
@@ -262,7 +275,7 @@ const shown = computed(() => {
         </div>
         <div v-if="c.images != null && c.replies != null" class="mono muted small">{{ stats(c.images, c.replies) }}</div>
       </RouterLink>
-      <template v-if="busy && status === 'ready'">
+      <template v-if="(busy || queued) && status === 'ready'">
         <div v-for="(s, i) in MORE_SKELETON" :key="`more-${i}`" class="card" :style="{ flex: s.flex }" aria-hidden="true">
           <div class="card__thumb sk" :style="{ aspectRatio: s.aspectRatio }"></div>
           <span class="sk sk-line" style="width: 60%"></span>
