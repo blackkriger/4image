@@ -26,6 +26,8 @@ const SKELETON = skeletonRatios(24).map((ar) => tile(ar, 1));
 const MORE_SKELETON = SKELETON.slice(0, 6);
 const MORE_PX = 800;
 const CHAIN_MS = 500;
+const SEARCH_MS = 400;
+const SEARCH_MIN = 2;
 
 const route = useRoute();
 const board = computed(() => route.params.board as string);
@@ -129,10 +131,21 @@ function nearEnd(): boolean {
   return !!sentinel.value && sentinel.value.getBoundingClientRect().top < window.innerHeight + MORE_PX;
 }
 
+let searchTimer = 0;
+
 function onSearch(): void {
-  searched.value = query.value.trim();
+  clearTimeout(searchTimer);
+  const q = query.value.trim();
+  const next = q.length >= SEARCH_MIN ? q : '';
+  if (next === searched.value) return;
+  searched.value = next;
   restart();
 }
+
+watch(query, () => {
+  clearTimeout(searchTimer);
+  searchTimer = window.setTimeout(onSearch, SEARCH_MS);
+});
 
 const observer = new IntersectionObserver(
   (entries) => {
@@ -146,6 +159,7 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
   run++;
+  clearTimeout(searchTimer);
   observer.disconnect();
 });
 
