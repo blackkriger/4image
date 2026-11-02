@@ -35,6 +35,8 @@ interface ArcMedia {
   media_size: string;
   banned: string;
   exif?: string | null;
+  preview_w?: string;
+  preview_h?: string;
 }
 
 interface ArcPost {
@@ -116,6 +118,8 @@ function toPost(p: ArcPost, board: string): Post {
     h: Number(m.media_h),
     ...files,
     thumb,
+    tn_w: Number(m.preview_w) || undefined,
+    tn_h: Number(m.preview_h) || undefined,
     original: m.media_link ?? undefined,
     filedeleted: m.banned === '1' || !m.media_link ? 1 : undefined,
   };

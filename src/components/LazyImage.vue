@@ -32,6 +32,7 @@ onBeforeUnmount(() => {
     ref="img"
     class="media"
     :src="current"
+    :data-thumbed="fallback && current === fallback ? '' : undefined"
     :style="placeholder"
     alt=""
     loading="lazy"

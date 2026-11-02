@@ -11,6 +11,8 @@ export interface Media {
   video: boolean;
   fallback?: string;
   original?: string;
+  thumbW?: number;
+  thumbH?: number;
 }
 
 const CDN = '/img';
@@ -36,6 +38,8 @@ export function mediaOf(board: string, p: Post): Media | null {
     video: !p.still && VIDEO.includes(p.ext),
     fallback: p.fallback,
     original: p.original,
+    thumbW: p.tn_w,
+    thumbH: p.tn_h,
   };
 }
 

@@ -57,7 +57,12 @@ const railThreads = computed(() => {
   if (!p) return props.threads;
   return props.threads.map((t) => (t.no === p.no ? { ...t, images: media.value.length, replies: p.replies ?? 0 } : t));
 });
-const tiles = computed(() => media.value.map((m) => ({ m, style: gridTile(m.w, m.h) })));
+const tiles = computed(() =>
+  media.value.map((m) => ({
+    m,
+    style: { ...gridTile(m.w, m.h), '--tw': m.thumbW ? `${m.thumbW}px` : undefined, '--th': m.thumbH ? `${m.thumbH}px` : undefined },
+  })),
+);
 const mediaByNo = computed(() => new Map(media.value.map((m) => [m.no, m])));
 const postsByNo = computed(() => new Map(posts.value.map((p) => [p.no, p])));
 const viewer = computed<number | null>({

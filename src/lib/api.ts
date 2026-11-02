@@ -17,6 +17,8 @@ export interface Post {
   fsize?: number;
   w?: number;
   h?: number;
+  tn_w?: number;
+  tn_h?: number;
   filedeleted?: number;
   replies?: number;
   images?: number;
