@@ -151,12 +151,19 @@ async function loadMore(): Promise<void> {
 
 function tick(): void {
   if (!archive.value) return;
-  if (revealed.value < cards.value.length) {
+  if (revealed.value < cards.value.length && (ended.value || moreFailed.value || rowClosed(revealed.value))) {
     revealed.value++;
     status.value = 'ready';
   }
   if (status.value !== 'loading' && status.value !== 'ready') return;
   if (!moreFailed.value && cards.value.length - revealed.value < QUEUE_LOW && Date.now() - fetchedAt >= CHAIN_MS && nearEnd()) loadMore();
+}
+
+function rowClosed(i: number): boolean {
+  const els = grid.value?.querySelectorAll<HTMLElement>('a.card');
+  const el = els?.[i];
+  const last = els?.[els.length - 1];
+  return !!el && !!last && el.offsetTop < last.offsetTop;
 }
 
 function stagger(list: ThreadCard[]): ThreadCard[] {
@@ -254,14 +261,15 @@ const shown = computed(() => {
     <p v-else-if="status === 'failed'" class="empty">{{ archive ? 'Could not load the archive.' : 'Could not load the catalog.' }}</p>
     <p v-else-if="status === 'ready' && ended && !cards.length" class="empty">No threads found.</p>
 
+    <div v-if="status === 'loading'" class="justify catalog__grid" aria-hidden="true">
+      <div v-for="(s, i) in SKELETON" :key="i" class="card" :style="{ flex: s.flex }">
+        <div class="card__thumb sk" :style="{ aspectRatio: s.aspectRatio }"></div>
+        <span class="sk sk-line" style="width: 60%"></span>
+        <span class="sk sk-line" style="width: 90%"></span>
+      </div>
+      <div class="justify__end"></div>
+    </div>
     <div ref="grid" class="justify catalog__grid">
-      <template v-if="status === 'loading'">
-        <div v-for="(s, i) in SKELETON" :key="i" class="card" :style="{ flex: s.flex }" aria-hidden="true">
-          <div class="card__thumb sk" :style="{ aspectRatio: s.aspectRatio }"></div>
-          <span class="sk sk-line" style="width: 60%"></span>
-          <span class="sk sk-line" style="width: 90%"></span>
-        </div>
-      </template>
       <RouterLink v-for="(c, i) in shown" :key="c.no" :to="`${base}/${c.no}`" class="card" :class="archive && i >= revealed ? 'card--hidden' : 'card--in'" :style="{ flex: c.style.flex, animationDelay: `${appear.get(c.no) ?? 0}ms` }">
         <div class="card__thumb" :class="{ nopic: !c.media }" :style="{ aspectRatio: c.style.aspectRatio }">
           <MediaThumb v-if="c.media" :m="c.media" />
