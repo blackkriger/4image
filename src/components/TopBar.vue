@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { Moon, Sun } from 'lucide-vue-next';
-import { archiveOf, boardPath } from '../lib/archives';
+import { archiveName, archiveOf, boardPath } from '../lib/archives';
 import { dark, toggleTheme } from '../lib/theme';
 
 const props = defineProps<{ source?: string }>();
@@ -11,6 +11,12 @@ const route = useRoute();
 const board = computed(() => route.params.board as string | undefined);
 const archived = computed(() => !!props.source || !!route.meta.archive);
 const hasArchive = computed(() => !board.value || !!archiveOf(board.value));
+const inThread = computed(() => !!route.params.thread);
+const hint = computed(() => {
+  if (board.value && archived.value) return `Threads gone from 4chan, saved by ${archiveName(board.value)}`;
+  if (archived.value) return 'Boards that have an archive';
+  return hasArchive.value ? 'Live threads on 4chan' : 'Live threads on 4chan. This board has no archive';
+});
 const home = (archive: boolean): string => (board.value ? boardPath(board.value, archive) : archive ? '/archive' : '/');
 </script>
 
@@ -21,11 +27,13 @@ const home = (archive: boolean): string => (board.value ? boardPath(board.value,
       <nav class="crumbs mono" aria-label="Breadcrumb">
         <template v-if="board">
           <span aria-hidden="true">/</span>
-          <RouterLink :to="home(false)" :aria-current="archived ? undefined : 'page'">{{ board }}</RouterLink>
+          <span v-if="!archived && !inThread" class="crumbs__here crumbs__hint" aria-current="page" :title="hint">{{ board }}</span>
+          <RouterLink v-else :to="home(false)" :class="{ crumbs__here: !archived }">{{ board }}</RouterLink>
         </template>
         <template v-if="archived">
           <span aria-hidden="true">/</span>
-          <RouterLink :to="home(true)" aria-current="page">archive</RouterLink>
+          <span v-if="!inThread" class="crumbs__here crumbs__hint" aria-current="page" :title="hint">archive</span>
+          <RouterLink v-else :to="home(true)" class="crumbs__here">archive</RouterLink>
         </template>
         <RouterLink v-else-if="hasArchive" :to="home(true)" class="crumbs__archive">Archive →</RouterLink>
       </nav>

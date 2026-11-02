@@ -250,14 +250,17 @@ button {
   text-decoration: none;
 }
 
+.crumbs__hint {
+  cursor: help;
+}
+
 .crumbs .crumbs__archive {
   margin-left: 8px;
   color: var(--accent);
   font-weight: 600;
 }
 
-.crumbs a[aria-current],
-.crumbs__here {
+.crumbs .crumbs__here {
   color: var(--text);
   font-weight: 600;
 }

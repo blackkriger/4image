@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { ArrowUp, ChevronLeft, ExternalLink, X } from 'lucide-vue-next';
 import { failStatus, loadThread, type LoadStatus, type Post } from '../lib/api';
-import { archiveOf, archiveUrl, boardPath, loadArchivedThread } from '../lib/archives';
+import { archiveName, archiveOf, archiveUrl, boardPath, loadArchivedThread } from '../lib/archives';
 import { stats, type ThreadCard } from '../lib/cards';
 import { gridTile, mediaOf, skeletonRatios } from '../lib/media';
 import { plainText } from '../lib/text';
@@ -41,7 +41,7 @@ const state = ref<'live' | 'closed' | 'archived' | 'deleted'>('live');
 const scroller = ref<HTMLElement | null>(null);
 const scrolled = ref(false);
 const source = ref<string | undefined>();
-const sourceName = computed(() => source.value?.replace(/^(archive|arch)\./, ''));
+const sourceName = computed(() => archiveName(board.value));
 const external = computed(() => (source.value ? archiveUrl(board.value, no.value) : `https://boards.4chan.org/${board.value}/thread/${no.value}`));
 
 const op = computed(() => posts.value[0]);

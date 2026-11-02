@@ -17,6 +17,10 @@ function thumbsOnly(board: string): boolean {
   return THUMBS_ONLY.has(archiveOf(board) ?? '');
 }
 
+export function archiveName(board: string): string | undefined {
+  return archiveOf(board)?.replace(/^(archive|arch)\./, '');
+}
+
 export function boardPath(board: string, archive: boolean): string {
   return archive ? `/${board}/archive` : `/${board}`;
 }
