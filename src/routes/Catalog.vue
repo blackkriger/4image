@@ -155,6 +155,7 @@ function tick(): void {
     cards.value = [...cards.value, c];
     status.value = 'ready';
   }
+  if (status.value !== 'loading' && status.value !== 'ready') return;
   if (!moreFailed.value && queue.length < QUEUE_LOW && Date.now() - fetchedAt >= CHAIN_MS && nearEnd()) loadMore();
 }
 
