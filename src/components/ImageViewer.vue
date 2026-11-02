@@ -16,6 +16,8 @@ const emit = defineEmits<{ (e: 'update:index', v: number | null): void; (e: 'quo
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 6;
 const SWIPE_PX = 60;
+const PRELOAD_AHEAD = 2;
+const PRELOAD_BEHIND = 1;
 const TEXT_KEY = '4image:post-text';
 const POS_KEY = '4image:post-pos';
 
@@ -31,6 +33,7 @@ const showText = ref(stored.get(TEXT_KEY) === '1');
 const postPos = ref(savedPostPos());
 const stage = ref<HTMLElement | null>(null);
 const failed = ref(false);
+const dir = ref(1);
 
 const open = computed(
   () => props.index != null && props.index >= 0 && props.index < props.items.length
@@ -39,6 +42,17 @@ const current = computed(() => (open.value ? props.items[props.index as number] 
 const count = computed(() => props.items.length);
 const fallen = computed(() => failed.value && !!current.value?.fallback);
 const src = computed(() => (current.value ? (fallen.value ? current.value.fallback! : current.value.src) : ''));
+const nearby = computed(() => {
+  if (props.index == null || !open.value) return [];
+  const offsets = [
+    ...Array.from({ length: PRELOAD_AHEAD }, (_, i) => (i + 1) * dir.value),
+    ...Array.from({ length: PRELOAD_BEHIND }, (_, i) => -(i + 1) * dir.value),
+  ];
+  const n = count.value;
+  const picked = new Set(offsets.map((d) => (((props.index as number) + d) % n + n) % n));
+  picked.delete(props.index);
+  return [...picked].map((i) => props.items[i]);
+});
 
 function onMediaError(): void {
   failed.value = true;
@@ -81,7 +95,8 @@ function go(dir: number): void {
   emit('update:index', (props.index + dir + count.value) % count.value);
 }
 
-watch(() => props.index, () => {
+watch(() => props.index, (i, prev) => {
+  if (i != null && prev != null && i !== prev) dir.value = (i > prev) !== (Math.abs(i - prev) > count.value / 2) ? 1 : -1;
   resetView();
   failed.value = false;
 });
@@ -234,6 +249,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
           </aside>
           <QuotePopups :popups="quotes.shown.value" :by-no="byNo" :media="mediaByNo" :op="op" @open="openMedia" />
         </div>
+      </div>
+      <div class="viewer__preload" aria-hidden="true">
+        <template v-for="m in nearby" :key="m.src">
+          <video v-if="m.video" :src="m.src" preload="auto" muted playsinline></video>
+          <img v-else :src="m.src" alt="" decoding="async" />
+        </template>
       </div>
     </div>
   </Teleport>

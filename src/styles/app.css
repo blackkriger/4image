@@ -1037,6 +1037,10 @@ img.media[data-failed] {
   padding: var(--viewer-top) 16px 16px;
 }
 
+.viewer__preload {
+  display: none;
+}
+
 .viewer__stage {
   flex: 1;
   min-width: 0;
