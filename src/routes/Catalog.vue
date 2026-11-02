@@ -40,7 +40,7 @@ const title = ref('');
 const cards = ref<ThreadCard[]>([]);
 const total = ref<number | null>(null);
 const appear = new Map<number, number>();
-let queue: ThreadCard[] = [];
+const revealed = ref(0);
 let pump = 0;
 let fetchedAt = 0;
 const status = ref<LoadStatus>('loading');
@@ -54,6 +54,7 @@ const ended = ref(false);
 const busy = ref(false);
 const moreFailed = ref(false);
 const sentinel = ref<HTMLElement | null>(null);
+const grid = ref<HTMLElement | null>(null);
 let live = new Set<number>();
 let run = 0;
 let titled = '';
@@ -96,7 +97,7 @@ function restart(): void {
   const b = board.value;
   cards.value = [];
   appear.clear();
-  queue = [];
+  revealed.value = 0;
   total.value = null;
   if (!searched.value) {
     countArchive(b)
@@ -139,24 +140,23 @@ async function loadMore(): Promise<void> {
     return;
   }
   if (id !== run) return;
-  const seen = new Set([...cards.value, ...queue].map((c) => c.no));
+  const seen = new Set(cards.value.map((c) => c.no));
   const fresh = posts.filter((p) => !live.has(p.no) && !seen.has(p.no)).map((p) => archiveCard(b, p));
   page.value++;
   ended.value = !posts.length;
   busy.value = false;
-  queue.push(...fresh);
-  if (ended.value && !queue.length) status.value = 'ready';
+  if (fresh.length) cards.value = [...cards.value, ...fresh];
+  if (ended.value && revealed.value >= cards.value.length) status.value = 'ready';
 }
 
 function tick(): void {
   if (!archive.value) return;
-  const c = queue.shift();
-  if (c) {
-    cards.value = [...cards.value, c];
+  if (revealed.value < cards.value.length) {
+    revealed.value++;
     status.value = 'ready';
   }
   if (status.value !== 'loading' && status.value !== 'ready') return;
-  if (!moreFailed.value && queue.length < QUEUE_LOW && Date.now() - fetchedAt >= CHAIN_MS && nearEnd()) loadMore();
+  if (!moreFailed.value && cards.value.length - revealed.value < QUEUE_LOW && Date.now() - fetchedAt >= CHAIN_MS && nearEnd()) loadMore();
 }
 
 function stagger(list: ThreadCard[]): ThreadCard[] {
@@ -170,7 +170,8 @@ function archiveCard(b: string, p: Post): ThreadCard {
 }
 
 function nearEnd(): boolean {
-  return !!sentinel.value && sentinel.value.getBoundingClientRect().top < window.innerHeight + MORE_PX;
+  const edge = grid.value?.querySelector('.card--hidden') ?? sentinel.value;
+  return !!edge && edge.getBoundingClientRect().top < window.innerHeight + MORE_PX;
 }
 
 let searchTimer = 0;
@@ -228,7 +229,7 @@ const shown = computed(() => {
   <main class="wrap wrap--full page">
     <div class="catalog__head">
       <h1 class="catalog__title"><span class="mono accent">/{{ board }}/</span>{{ title }}</h1>
-      <span v-if="archive && total != null" class="mono muted small">{{ cards.length.toLocaleString('en-US') }} / {{ Math.max(total, cards.length).toLocaleString('en-US') }} threads</span>
+      <span v-if="archive && total != null" class="mono muted small">{{ revealed.toLocaleString('en-US') }} / {{ Math.max(total, cards.length).toLocaleString('en-US') }} threads</span>
       <span v-else-if="!archive && status === 'ready'" class="mono muted small">{{ cards.length }} threads</span>
       <span class="grow"></span>
       <form v-if="archive" class="search" role="search" @submit.prevent="onSearch">
@@ -253,7 +254,7 @@ const shown = computed(() => {
     <p v-else-if="status === 'failed'" class="empty">{{ archive ? 'Could not load the archive.' : 'Could not load the catalog.' }}</p>
     <p v-else-if="status === 'ready' && ended && !cards.length" class="empty">No threads found.</p>
 
-    <div class="justify catalog__grid">
+    <div ref="grid" class="justify catalog__grid">
       <template v-if="status === 'loading'">
         <div v-for="(s, i) in SKELETON" :key="i" class="card" :style="{ flex: s.flex }" aria-hidden="true">
           <div class="card__thumb sk" :style="{ aspectRatio: s.aspectRatio }"></div>
@@ -261,7 +262,7 @@ const shown = computed(() => {
           <span class="sk sk-line" style="width: 90%"></span>
         </div>
       </template>
-      <RouterLink v-for="c in shown" :key="c.no" :to="`${base}/${c.no}`" class="card card--in" :style="{ flex: c.style.flex, animationDelay: `${appear.get(c.no) ?? 0}ms` }">
+      <RouterLink v-for="(c, i) in shown" :key="c.no" :to="`${base}/${c.no}`" class="card" :class="archive && i >= revealed ? 'card--hidden' : 'card--in'" :style="{ flex: c.style.flex, animationDelay: `${appear.get(c.no) ?? 0}ms` }">
         <div class="card__thumb" :class="{ nopic: !c.media }" :style="{ aspectRatio: c.style.aspectRatio }">
           <MediaThumb v-if="c.media" :m="c.media" />
         </div>

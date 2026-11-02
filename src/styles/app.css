@@ -582,6 +582,10 @@ button {
   animation: card-in 0.35s ease both;
 }
 
+.card--hidden {
+  visibility: hidden;
+}
+
 @keyframes card-in {
   from {
     opacity: 0;
