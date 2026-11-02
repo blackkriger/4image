@@ -984,6 +984,10 @@ img.media[data-failed] {
   color: var(--muted);
 }
 
+.viewer__file {
+  display: contents;
+}
+
 .viewer__name {
   flex: 0 1 auto;
   max-width: 200px;
@@ -1144,9 +1148,7 @@ img.media[data-failed] {
   }
 
   .threadbar__back,
-  .topbar__links--wide,
-  .viewer__name,
-  .viewer__meta {
+  .topbar__links--wide {
     display: none;
   }
 
@@ -1194,18 +1196,34 @@ img.media[data-failed] {
     margin-right: -8px;
   }
 
+  .viewer__info {
+    display: contents;
+  }
+
+  .viewer__file {
+    order: 1;
+    flex: 1 0 100%;
+    display: flex;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .viewer__name {
+    max-width: none;
+  }
+
   .viewer .vbtn:not(.vbtn--icon) {
     padding: 0 8px;
   }
 
   .viewer__strip {
-    order: 1;
+    order: 2;
     flex: 1 0 100%;
     max-width: none;
   }
 
   .viewer {
-    --viewer-top: 128px;
+    --viewer-top: 152px;
   }
 
   .viewer__body {

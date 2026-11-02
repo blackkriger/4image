@@ -184,8 +184,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
       <div class="viewer__bar">
         <div class="viewer__info">
           <span class="mono viewer__n">{{ (index ?? 0) + 1 }} <span class="viewer__dim">/ {{ count }}</span></span>
-          <span class="mono viewer__name">{{ current.name }}</span>
-          <span class="mono viewer__meta">{{ formatSize(current.size) }}, {{ current.w }}×{{ current.h }}</span>
+          <span class="viewer__file">
+            <span class="mono viewer__name">{{ current.name }}</span>
+            <span class="mono viewer__meta">{{ formatSize(current.size) }}, {{ current.w }}×{{ current.h }}</span>
+          </span>
         </div>
         <ViewerStrip :items="items" :index="index ?? 0" @pick="emit('update:index', $event)" @step="go" />
         <div class="viewer__actions">
