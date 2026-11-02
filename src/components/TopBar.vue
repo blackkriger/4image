@@ -14,6 +14,7 @@ const hasArchive = computed(() => !board.value || !!archiveOf(board.value));
 const inThread = computed(() => !!route.params.thread);
 const about = computed(() => route.name === 'about');
 const hint = computed(() => {
+  if (about.value) return 'About 4image';
   if (board.value && archived.value) return `Threads gone from 4chan, saved by ${archiveName(board.value)}`;
   if (archived.value) return 'Boards that have an archive';
   return hasArchive.value ? 'Live threads on 4chan' : 'Live threads on 4chan. This board has no archive';
@@ -38,7 +39,7 @@ const home = (archive: boolean): string => (board.value ? boardPath(board.value,
         </template>
         <template v-else-if="about">
           <span aria-hidden="true">/</span>
-          <span class="crumbs__here" aria-current="page">about</span>
+          <span class="crumbs__here crumbs__hint" aria-current="page" :title="hint">about</span>
         </template>
         <RouterLink v-else-if="hasArchive" :to="home(true)" class="crumbs__archive">Archive →</RouterLink>
       </nav>

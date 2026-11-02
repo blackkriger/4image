@@ -21,7 +21,9 @@ onMounted(() => setTitle());
       <div class="about__archives">
         <div v-for="a in archives" :key="a.host" class="about__archive">
           <a :href="`https://${a.host}`" target="_blank" rel="noopener noreferrer">{{ a.name }}</a>
-          <span class="mono muted">{{ a.boards.map((b) => `/${b}/`).join(' ') }}</span>
+          <span class="mono muted about__boards">
+            <span v-for="b in a.boards" :key="b">/{{ b }}/</span>
+          </span>
         </div>
       </div>
     </section>
