@@ -250,6 +250,12 @@ button {
   text-decoration: none;
 }
 
+.crumbs .crumbs__archive {
+  margin-left: 8px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .crumbs a[aria-current],
 .crumbs__here {
   color: var(--text);
