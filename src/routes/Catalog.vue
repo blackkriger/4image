@@ -23,11 +23,10 @@ const SORTS: [Sort, string][] = [
 ];
 
 const SKELETON = skeletonRatios(24).map((ar) => tile(ar, 1));
-const MORE_SKELETON = SKELETON.slice(0, 6);
 const MORE_PX = 800;
 const CHAIN_MS = 500;
-const REVEAL_MS = 90;
-const QUEUE_LOW = 8;
+const REVEAL_MS = 200;
+const QUEUE_LOW = 12;
 const APPEAR_MS = 40;
 const APPEAR_MAX = 24;
 const SEARCH_MS = 400;
@@ -41,7 +40,6 @@ const title = ref('');
 const cards = ref<ThreadCard[]>([]);
 const total = ref<number | null>(null);
 const appear = new Map<number, number>();
-const queued = ref(0);
 let queue: ThreadCard[] = [];
 let pump = 0;
 let fetchedAt = 0;
@@ -99,7 +97,6 @@ function restart(): void {
   cards.value = [];
   appear.clear();
   queue = [];
-  queued.value = 0;
   total.value = null;
   if (!searched.value) {
     countArchive(b)
@@ -148,7 +145,6 @@ async function loadMore(): Promise<void> {
   ended.value = !posts.length;
   busy.value = false;
   queue.push(...fresh);
-  queued.value = queue.length;
   if (ended.value && !queue.length) status.value = 'ready';
 }
 
@@ -156,7 +152,6 @@ function tick(): void {
   if (!archive.value) return;
   const c = queue.shift();
   if (c) {
-    queued.value = queue.length;
     cards.value = [...cards.value, c];
     status.value = 'ready';
   }
@@ -275,13 +270,6 @@ const shown = computed(() => {
         </div>
         <div v-if="c.images != null && c.replies != null" class="mono muted small">{{ stats(c.images, c.replies) }}</div>
       </RouterLink>
-      <template v-if="(busy || queued) && status === 'ready'">
-        <div v-for="(s, i) in MORE_SKELETON" :key="`more-${i}`" class="card" :style="{ flex: s.flex }" aria-hidden="true">
-          <div class="card__thumb sk" :style="{ aspectRatio: s.aspectRatio }"></div>
-          <span class="sk sk-line" style="width: 60%"></span>
-          <span class="sk sk-line" style="width: 90%"></span>
-        </div>
-      </template>
       <div class="justify__end" aria-hidden="true"></div>
     </div>
     <div ref="sentinel" aria-hidden="true"></div>
