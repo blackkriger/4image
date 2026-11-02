@@ -475,6 +475,23 @@ button {
   color: var(--text);
 }
 
+.card--in {
+  animation: card-in 0.35s ease both;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card--in {
+    animation: none;
+  }
+}
+
 .card__thumb {
   overflow: hidden;
   background: var(--ph);

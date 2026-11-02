@@ -26,6 +26,8 @@ const SKELETON = skeletonRatios(24).map((ar) => tile(ar, 1));
 const MORE_SKELETON = SKELETON.slice(0, 6);
 const MORE_PX = 800;
 const CHAIN_MS = 500;
+const APPEAR_MS = 40;
+const APPEAR_MAX = 24;
 const SEARCH_MS = 400;
 const SEARCH_MIN = 2;
 
@@ -36,6 +38,7 @@ const base = computed(() => boardPath(board.value, archive.value));
 const title = ref('');
 const cards = ref<ThreadCard[]>([]);
 const total = ref<number | null>(null);
+const appear = new Map<number, number>();
 const status = ref<LoadStatus>('loading');
 const savedSort = stored.get(SORT_KEY);
 const sort = ref<Sort>(SORTS.some(([id]) => id === savedSort) ? (savedSort as Sort) : 'bump');
@@ -58,6 +61,7 @@ async function load(): Promise<void> {
   const b = board.value;
   status.value = 'loading';
   cards.value = [];
+  appear.clear();
   total.value = null;
   if (b !== titled) title.value = '';
   try {
@@ -67,7 +71,7 @@ async function load(): Promise<void> {
     titled = b;
     if (!route.params.thread) setTitle(b, title.value);
     if (!archive.value) {
-      cards.value = threads.map((t) => toCard(b, t));
+      cards.value = stagger(threads.map((t) => toCard(b, t)));
       status.value = 'ready';
       return;
     }
@@ -87,6 +91,7 @@ function restart(): void {
   const id = run;
   const b = board.value;
   cards.value = [];
+  appear.clear();
   total.value = null;
   if (!searched.value) {
     countArchive(b)
@@ -129,13 +134,18 @@ async function loadMore(): Promise<void> {
   }
   if (id !== run) return;
   const seen = new Set(cards.value.map((c) => c.no));
-  cards.value = [...cards.value, ...posts.filter((p) => !live.has(p.no) && !seen.has(p.no)).map((p) => archiveCard(b, p))];
+  cards.value = [...cards.value, ...stagger(posts.filter((p) => !live.has(p.no) && !seen.has(p.no)).map((p) => archiveCard(b, p)))];
   page.value++;
   ended.value = !posts.length;
   busy.value = false;
   status.value = 'ready';
   await nextTick();
   if (nearEnd()) setTimeout(() => id === run && nearEnd() && loadMore(), CHAIN_MS);
+}
+
+function stagger(list: ThreadCard[]): ThreadCard[] {
+  list.forEach((c, i) => appear.set(c.no, Math.min(i, APPEAR_MAX) * APPEAR_MS));
+  return list;
 }
 
 function archiveCard(b: string, p: Post): ThreadCard {
@@ -242,7 +252,7 @@ const shown = computed(() => {
           <span class="sk sk-line" style="width: 90%"></span>
         </div>
       </template>
-      <RouterLink v-for="c in shown" :key="c.no" :to="`${base}/${c.no}`" class="card" :style="{ flex: c.style.flex }">
+      <RouterLink v-for="c in shown" :key="c.no" :to="`${base}/${c.no}`" class="card card--in" :style="{ flex: c.style.flex, animationDelay: `${appear.get(c.no) ?? 0}ms` }">
         <div class="card__thumb" :class="{ nopic: !c.media }" :style="{ aspectRatio: c.style.aspectRatio }">
           <MediaThumb v-if="c.media" :m="c.media" />
         </div>
