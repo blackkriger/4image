@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router';
 import { Search } from 'lucide-vue-next';
 import { failStatus, loadBoards, loadCatalog, type LoadStatus, type Post } from '../lib/api';
-import { archiveOf, boardPath, loadArchivePage, searchArchive } from '../lib/archives';
+import { archiveOf, boardPath, countArchive, loadArchivePage, searchArchive } from '../lib/archives';
 import { stats, toCard, type ThreadCard } from '../lib/cards';
 import { skeletonRatios, tile } from '../lib/media';
 import { stored } from '../lib/storage';
@@ -35,6 +35,7 @@ const archive = computed(() => !!route.meta.archive);
 const base = computed(() => boardPath(board.value, archive.value));
 const title = ref('');
 const cards = ref<ThreadCard[]>([]);
+const total = ref<number | null>(null);
 const status = ref<LoadStatus>('loading');
 const savedSort = stored.get(SORT_KEY);
 const sort = ref<Sort>(SORTS.some(([id]) => id === savedSort) ? (savedSort as Sort) : 'bump');
@@ -57,6 +58,7 @@ async function load(): Promise<void> {
   const b = board.value;
   status.value = 'loading';
   cards.value = [];
+  total.value = null;
   if (b !== titled) title.value = '';
   try {
     const [boards, threads] = await Promise.all([loadBoards().catch(() => []), archive.value ? loadCatalog(b).catch(() => []) : loadCatalog(b)]);
@@ -82,7 +84,17 @@ async function load(): Promise<void> {
 
 function restart(): void {
   run++;
+  const id = run;
+  const b = board.value;
   cards.value = [];
+  total.value = null;
+  if (!searched.value) {
+    countArchive(b)
+      .then((n) => {
+        if (id === run && n != null) total.value = Math.max(n - live.size, 0);
+      })
+      .catch(() => {});
+  }
   page.value = 1;
   ended.value = false;
   moreFailed.value = false;
@@ -100,7 +112,11 @@ async function loadMore(): Promise<void> {
   moreFailed.value = false;
   let posts: Post[] = [];
   try {
-    posts = q ? await searchArchive(b, q, page.value) : await loadArchivePage(b, page.value);
+    if (q) {
+      const found = await searchArchive(b, q, page.value);
+      posts = found.posts;
+      if (id === run && found.total != null) total.value = found.total;
+    } else posts = await loadArchivePage(b, page.value);
   } catch (e) {
     if (id !== run) return;
     busy.value = false;
@@ -193,7 +209,8 @@ const shown = computed(() => {
   <main class="wrap wrap--full page">
     <div class="catalog__head">
       <h1 class="catalog__title"><span class="mono accent">/{{ board }}/</span>{{ title }}</h1>
-      <span v-if="status === 'ready' && !archive" class="mono muted small">{{ cards.length }} threads</span>
+      <span v-if="archive && total != null" class="mono muted small">{{ cards.length.toLocaleString('en-US') }} / {{ Math.max(total, cards.length).toLocaleString('en-US') }} threads</span>
+      <span v-else-if="!archive && status === 'ready'" class="mono muted small">{{ cards.length }} threads</span>
       <span class="grow"></span>
       <form v-if="archive" class="search" role="search" @submit.prevent="onSearch">
         <Search class="ic" aria-hidden="true" />

@@ -172,8 +172,30 @@ export async function loadArchivePage(board: string, page: number): Promise<Post
     });
 }
 
-export async function searchArchive(board: string, text: string, page: number): Promise<Post[]> {
-  const q = new URLSearchParams({ boards: board, type: 'op', text, page: String(page) });
-  const d = await arc<{ '0'?: { posts: ArcPost[] } }>(board, `search/?${q}`);
-  return (d['0']?.posts ?? []).map((p) => toPost(p, board));
+interface ArcSearch {
+  '0'?: { posts: ArcPost[] };
+  meta?: { total_found?: number };
+}
+
+async function search(board: string, text: string, page: number): Promise<ArcSearch> {
+  const q = new URLSearchParams({ boards: board, type: 'op', page: String(page) });
+  if (text) q.set('text', text);
+  return arc<ArcSearch>(board, `search/?${q}`);
+}
+
+export async function searchArchive(board: string, text: string, page: number): Promise<{ posts: Post[]; total: number | null }> {
+  const d = await search(board, text, page);
+  return { posts: (d['0']?.posts ?? []).map((p) => toPost(p, board)), total: d.meta?.total_found ?? null };
+}
+
+const counts = new Map<string, Promise<number | null>>();
+
+export function countArchive(board: string): Promise<number | null> {
+  let c = counts.get(board);
+  if (!c) {
+    c = search(board, '', 1).then((d) => d.meta?.total_found ?? null);
+    c.catch(() => counts.delete(board));
+    counts.set(board, c);
+  }
+  return c;
 }
