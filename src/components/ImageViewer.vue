@@ -146,7 +146,7 @@ function onPointerUp(ev: PointerEvent): void {
 let postDrag: { sx: number; sy: number; bx: number; by: number } | null = null;
 
 function onPostDown(ev: PointerEvent): void {
-  if (ev.button !== 0 || ev.pointerType === 'touch' || (ev.target as Element).closest('a')) return;
+  if (ev.button !== 0 || (ev.target as Element).closest('a')) return;
   postDrag = { sx: ev.clientX, sy: ev.clientY, bx: postPos.value.x, by: postPos.value.y };
   (ev.currentTarget as HTMLElement).setPointerCapture(ev.pointerId);
 }

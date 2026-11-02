@@ -1189,6 +1189,15 @@ img.media[data-failed] {
     gap: 4px 12px;
   }
 
+  .viewer__actions {
+    gap: 0;
+    margin-right: -8px;
+  }
+
+  .viewer .vbtn:not(.vbtn--icon) {
+    padding: 0 8px;
+  }
+
   .viewer__strip {
     order: 1;
     flex: 1 0 100%;
@@ -1196,7 +1205,7 @@ img.media[data-failed] {
   }
 
   .viewer {
-    --viewer-top: 160px;
+    --viewer-top: 128px;
   }
 
   .viewer__body {
@@ -1210,7 +1219,9 @@ img.media[data-failed] {
     bottom: 12px;
     left: 12px;
     width: auto;
-    max-height: 40%;
+    max-height: none;
+    overflow: visible;
+    touch-action: none;
     transform: translate(var(--dx, 0px), var(--dy, 0px));
   }
 }
