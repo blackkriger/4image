@@ -25,7 +25,7 @@ const SORTS: [Sort, string][] = [
 const SKELETON = skeletonRatios(24).map((ar) => tile(ar, 1));
 const MORE_SKELETON = SKELETON.slice(0, 6);
 const MORE_PX = 800;
-const CHAIN_MS = 1500;
+const CHAIN_MS = 500;
 
 const route = useRoute();
 const board = computed(() => route.params.board as string);
@@ -46,6 +46,7 @@ const moreFailed = ref(false);
 const sentinel = ref<HTMLElement | null>(null);
 let live = new Set<number>();
 let run = 0;
+let titled = '';
 
 watch(sort, (s) => stored.set(SORT_KEY, s));
 
@@ -54,11 +55,12 @@ async function load(): Promise<void> {
   const b = board.value;
   status.value = 'loading';
   cards.value = [];
-  title.value = '';
+  if (b !== titled) title.value = '';
   try {
     const [boards, threads] = await Promise.all([loadBoards().catch(() => []), archive.value ? loadCatalog(b).catch(() => []) : loadCatalog(b)]);
     if (id !== run) return;
     title.value = boards.find((x) => x.board === b)?.title ?? '';
+    titled = b;
     if (!route.params.thread) setTitle(b, title.value);
     if (!archive.value) {
       cards.value = threads.map((t) => toCard(b, t));

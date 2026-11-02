@@ -30,6 +30,7 @@ interface ArcMedia {
   media_h: string;
   media_size: string;
   banned: string;
+  exif?: string | null;
 }
 
 interface ArcPost {
@@ -69,7 +70,16 @@ function hasMedia(p: ArcPost): boolean {
   return !!p.media?.media_link;
 }
 
-function toPost(p: ArcPost, thumbsOnly: boolean): Post {
+function fourchanTim(m: ArcMedia): number | null {
+  try {
+    const tim = (JSON.parse(m.exif ?? '{}') as { tim?: unknown }).tim;
+    return typeof tim === 'number' ? tim : null;
+  } catch {
+    return null;
+  }
+}
+
+function toPost(p: ArcPost, board: string): Post {
   const no = Number(p.num);
   const thread = Number(p.thread_num);
   const post: Post = {
@@ -87,6 +97,11 @@ function toPost(p: ArcPost, thumbsOnly: boolean): Post {
   if (!m || dot < 0) return post;
   const ext = orig.slice(dot);
   const name = m.media_filename ?? orig;
+  const thumb = m.thumb_link ?? m.media_link ?? undefined;
+  const tim = thumbsOnly(board) ? fourchanTim(m) : null;
+  const files = thumbsOnly(board)
+    ? { src: tim ? `/img/${board}/${tim}${ext}?archive=0` : thumb, fallback: thumb, still: tim ? undefined : 1 }
+    : { src: m.media_link ?? undefined };
   return {
     ...post,
     tim: Number(orig.slice(0, dot)),
@@ -95,9 +110,9 @@ function toPost(p: ArcPost, thumbsOnly: boolean): Post {
     fsize: Number(m.media_size),
     w: Number(m.media_w),
     h: Number(m.media_h),
-    src: (thumbsOnly ? m.thumb_link : m.media_link) ?? undefined,
-    thumb: m.thumb_link ?? m.media_link ?? undefined,
-    still: thumbsOnly ? 1 : undefined,
+    ...files,
+    thumb,
+    original: m.media_link ?? undefined,
     filedeleted: m.banned === '1' || !m.media_link ? 1 : undefined,
   };
 }
@@ -136,23 +151,21 @@ export function loadArchivedThread(board: string, no: number): Promise<Post[]> {
 async function fetchArchivedThread(board: string, no: number): Promise<Post[]> {
   const t = (await arc<Record<string, ArcThread>>(board, `thread/?board=${board}&num=${no}`))[no];
   if (!t) throw new HttpError(404);
-  const still = thumbsOnly(board);
   const replies = repliesOf(t).sort((a, b) => Number(a.num) - Number(b.num));
-  const op = toPost(t.op, still);
+  const op = toPost(t.op, board);
   op.replies = replies.length;
   op.images = replies.filter(hasMedia).length;
-  return [op, ...replies.map((p) => toPost(p, still))];
+  return [op, ...replies.map((p) => toPost(p, board))];
 }
 
 export async function loadArchivePage(board: string, page: number): Promise<Post[]> {
   const threads = Object.values(await arc<Record<string, ArcThread>>(board, `index/?board=${board}&page=${page}`));
   const bumped = (t: ArcThread): number => Math.max(t.op.timestamp, ...repliesOf(t).map((p) => p.timestamp));
-  const still = thumbsOnly(board);
   return threads
     .sort((a, b) => bumped(b) - bumped(a))
     .map((t) => {
       const last = repliesOf(t);
-      const op = toPost(t.op, still);
+      const op = toPost(t.op, board);
       op.replies = (t.omitted ?? 0) + last.length;
       op.images = (t.images_omitted ?? 0) + last.filter(hasMedia).length;
       return op;
@@ -160,7 +173,7 @@ export async function loadArchivePage(board: string, page: number): Promise<Post
 }
 
 export async function searchArchive(board: string, text: string, page: number): Promise<Post[]> {
-  const q = new URLSearchParams({ board, type: 'op', text, page: String(page) });
+  const q = new URLSearchParams({ boards: board, type: 'op', text, page: String(page) });
   const d = await arc<{ '0'?: { posts: ArcPost[] } }>(board, `search/?${q}`);
-  return (d['0']?.posts ?? []).map((p) => toPost(p, thumbsOnly(board)));
+  return (d['0']?.posts ?? []).map((p) => toPost(p, board));
 }

@@ -7,6 +7,7 @@ import LazyImage from './LazyImage.vue';
 defineProps<{ m: Media }>();
 
 const video = ref<HTMLVideoElement | null>(null);
+const failed = ref(false);
 
 onMounted(() => {
   if (video.value) observeVideo(video.value);
@@ -23,7 +24,7 @@ function sound(on: boolean): void {
 
 <template>
   <video
-    v-if="m.video"
+    v-if="m.video && !(failed && m.fallback)"
     ref="video"
     class="media"
     :src="m.src"
@@ -34,6 +35,7 @@ function sound(on: boolean): void {
     preload="none"
     @mouseenter="sound(true)"
     @mouseleave="sound(false)"
+    @error="failed = true"
   ></video>
-  <LazyImage v-else :src="m.src" :thumb="m.thumb" />
+  <LazyImage v-else :src="m.video ? m.fallback! : m.src" :thumb="m.thumb" :fallback="m.fallback" />
 </template>

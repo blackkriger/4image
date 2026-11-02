@@ -41,6 +41,7 @@ const state = ref<'live' | 'closed' | 'archived' | 'deleted'>('live');
 const scroller = ref<HTMLElement | null>(null);
 const scrolled = ref(false);
 const source = ref<string | undefined>();
+const sourceName = computed(() => source.value?.replace(/^(archive|arch)\./, ''));
 const external = computed(() => (source.value ? archiveUrl(board.value, no.value) : `https://boards.4chan.org/${board.value}/thread/${no.value}`));
 
 const op = computed(() => posts.value[0]);
@@ -216,7 +217,7 @@ onBeforeUnmount(() => {
             <h1 v-if="title" @mouseenter="hintIfCut($event, title)">{{ title }}</h1>
             <span v-else-if="status === 'loading'" class="sk sk-line threadbar__sk-title"></span>
             <div v-if="op" class="mono muted small">
-              {{ stats(media.length, op.replies ?? 0) }}<template v-if="state === 'live'">, <UpdatedAgo :at="updatedAt" /></template><template v-else>, {{ state }}<template v-if="source">, <a :href="external" target="_blank" rel="noopener noreferrer">{{ source }}</a></template></template>
+              {{ stats(media.length, op.replies ?? 0) }}<template v-if="state === 'live'">, <UpdatedAgo :at="updatedAt" /></template><template v-else-if="source">, archived on <a :href="external" target="_blank" rel="noopener noreferrer">{{ sourceName }}</a></template><template v-else>, {{ state }}</template>
             </div>
             <div v-else-if="card && card.images != null && card.replies != null" class="mono muted small">{{ stats(card.images, card.replies) }}</div>
             <span v-else-if="status === 'loading'" class="sk sk-line threadbar__sk-meta"></span>

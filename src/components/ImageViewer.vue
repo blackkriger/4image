@@ -30,12 +30,19 @@ const pan = ref({ x: 0, y: 0 });
 const showText = ref(stored.get(TEXT_KEY) === '1');
 const postPos = ref(savedPostPos());
 const stage = ref<HTMLElement | null>(null);
+const failed = ref(false);
 
 const open = computed(
   () => props.index != null && props.index >= 0 && props.index < props.items.length
 );
 const current = computed(() => (open.value ? props.items[props.index as number] : null));
 const count = computed(() => props.items.length);
+const fallen = computed(() => failed.value && !!current.value?.fallback);
+const src = computed(() => (current.value ? (fallen.value ? current.value.fallback! : current.value.src) : ''));
+
+function onMediaError(): void {
+  failed.value = true;
+}
 const text = computed(() => (current.value && showText.value ? postBody(props.byNo.get(current.value.no)?.com ?? '', props.op) : ''));
 const mediaByNo = computed(() => new Map(props.items.map((m) => [m.no, m])));
 const quotes = useQuotePopups(() => props.byNo);
@@ -74,7 +81,10 @@ function go(dir: number): void {
   emit('update:index', (props.index + dir + count.value) % count.value);
 }
 
-watch(() => props.index, resetView);
+watch(() => props.index, () => {
+  resetView();
+  failed.value = false;
+});
 watch(showText, (on) => stored.set(TEXT_KEY, on ? '1' : '0'));
 
 function onWheel(ev: WheelEvent): void {
@@ -170,7 +180,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
           <button class="vbtn" type="button" :aria-pressed="showText" @click="showText = !showText">
             Show post text
           </button>
-          <a class="vbtn vbtn--icon" :href="current.src" target="_blank" rel="noopener noreferrer" aria-label="Open original">
+          <a class="vbtn vbtn--icon" :href="current.original ?? current.src" target="_blank" rel="noopener noreferrer" aria-label="Open original">
             <ExternalLink class="ic" />
           </a>
           <button class="vbtn vbtn--icon" type="button" aria-label="Close viewer" @click="close">
@@ -182,7 +192,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
       <div class="viewer__body" @click.self="close">
         <div ref="stage" class="viewer__stage" @wheel="onWheel" @click.self="close">
           <video
-            v-if="current.video"
+            v-if="current.video && !fallen"
             :key="current.src"
             class="viewer__media"
             :src="current.src"
@@ -191,11 +201,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
             autoplay
             loop
             playsinline
+            @error="onMediaError"
           ></video>
           <img
             v-else
-            :key="current.src"
-            :src="current.src"
+            :key="src"
+            :src="src"
             :alt="current.name"
             class="viewer__media viewer__img"
             draggable="false"
@@ -205,6 +216,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
             @pointerup="onPointerUp"
             @pointercancel="onPointerUp"
             @dblclick="resetView"
+            @error="onMediaError"
           />
         </div>
         <div v-if="showText" class="viewer__quotes" @mouseover="quotes.onOver" @mouseout="quotes.onOut" @click="onPostClick">

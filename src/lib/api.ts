@@ -25,6 +25,8 @@ export interface Post {
   closed?: number;
   src?: string;
   thumb?: string;
+  fallback?: string;
+  original?: string;
   still?: number;
 }
 
