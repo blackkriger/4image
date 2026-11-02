@@ -12,6 +12,7 @@ const board = computed(() => route.params.board as string | undefined);
 const archived = computed(() => !!props.source || !!route.meta.archive);
 const hasArchive = computed(() => !board.value || !!archiveOf(board.value));
 const inThread = computed(() => !!route.params.thread);
+const about = computed(() => route.name === 'about');
 const hint = computed(() => {
   if (board.value && archived.value) return `Threads gone from 4chan, saved by ${archiveName(board.value)}`;
   if (archived.value) return 'Boards that have an archive';
@@ -35,11 +36,14 @@ const home = (archive: boolean): string => (board.value ? boardPath(board.value,
           <span v-if="!inThread" class="crumbs__here crumbs__hint" aria-current="page" :title="hint">archive</span>
           <RouterLink v-else :to="home(true)" class="crumbs__here">archive</RouterLink>
         </template>
+        <template v-else-if="about">
+          <span aria-hidden="true">/</span>
+          <span class="crumbs__here" aria-current="page">about</span>
+        </template>
         <RouterLink v-else-if="hasArchive" :to="home(true)" class="crumbs__archive">Archive →</RouterLink>
       </nav>
       <div class="topbar__links" :class="{ 'topbar__links--wide': board }">
-        <a href="https://boosty.to/blackkriger/donate" target="_blank" rel="noopener noreferrer">Help cover hosting</a>
-        <span class="topbar__by">by <a href="https://github.com/blackkriger" target="_blank" rel="noopener noreferrer">blackkriger</a></span>
+        <RouterLink to="/about">About</RouterLink>
       </div>
       <div class="topbar__icons">
         <a href="https://github.com/blackkriger/4image" target="_blank" rel="noopener noreferrer" class="topbar__repo" aria-label="4image on GitHub">

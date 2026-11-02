@@ -1,6 +1,6 @@
 import { HttpError, loadThread, type Post } from './api';
 
-const ARCHIVES: Record<string, string[]> = {
+export const ARCHIVES: Record<string, string[]> = {
   'arch.b4k.dev': ['v', 'vg', 'vm', 'vmg', 'vp', 'vrpg', 'vst', 'qb'],
   'archive.palanq.win': ['bant', 'c', 'e', 'i', 'n', 'news', 'out', 'p', 'pw', 'qst', 'toy', 'vip', 'vt', 'w', 'wg', 'wsr'],
 };
@@ -17,8 +17,13 @@ function thumbsOnly(board: string): boolean {
   return THUMBS_ONLY.has(archiveOf(board) ?? '');
 }
 
+export function hostName(host: string): string {
+  return host.replace(/^(archive|arch)\./, '');
+}
+
 export function archiveName(board: string): string | undefined {
-  return archiveOf(board)?.replace(/^(archive|arch)\./, '');
+  const host = archiveOf(board);
+  return host && hostName(host);
 }
 
 export function boardPath(board: string, archive: boolean): string {

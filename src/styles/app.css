@@ -278,14 +278,12 @@ button {
 .topbar__links a {
   font-weight: 600;
   text-decoration: none;
+  color: var(--muted);
 }
 
-.topbar__by a {
+.topbar__links a:hover,
+.topbar__links a[aria-current] {
   color: var(--text);
-}
-
-.topbar__by a:hover {
-  color: var(--accent);
 }
 
 .topbar__icons {
@@ -326,6 +324,102 @@ button {
 .themetoggle .ic {
   width: 20px;
   height: 20px;
+}
+
+.about {
+  max-width: 712px;
+  padding-top: 72px;
+  padding-bottom: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.about p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.about__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.about__title {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.about .about__lead {
+  font-size: 19px;
+  line-height: 1.6;
+}
+
+.about__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.about__label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.about__label a,
+.about__archive a,
+.about__strong {
+  font-weight: 600;
+}
+
+.about__label a,
+.about__archive a {
+  text-decoration: none;
+}
+
+.about__archives {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.about__archive {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  font-size: 15px;
+}
+
+.about__archive .mono {
+  font-size: 14px;
+}
+
+.about__by {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.about__social {
+  display: inline-flex;
+  color: var(--text);
+}
+
+.about__social svg {
+  width: 18px;
+  height: 18px;
 }
 
 .boards {
@@ -1033,7 +1127,6 @@ img.media[data-failed] {
 
   .threadbar__back,
   .topbar__links--wide,
-  .topbar__by,
   .viewer__name,
   .viewer__meta {
     display: none;
