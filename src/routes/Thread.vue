@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ArrowUp, ChevronLeft, ExternalLink, X } from 'lucide-vue-next';
+import { ArrowUp, ChevronLeft, ExternalLink } from 'lucide-vue-next';
 import { failStatus, loadThread, type LoadStatus, type Post } from '../lib/api';
 import { archiveName, archiveOf, archiveUrl, boardPath, loadArchivedThread } from '../lib/archives';
 import { stats, type ThreadCard } from '../lib/cards';
@@ -18,6 +18,7 @@ import ImageViewer from '../components/ImageViewer.vue';
 import UpdatedAgo from '../components/UpdatedAgo.vue';
 
 const TEXT_KEY = '4image:text';
+const AUTOPLAY_KEY = '4image:autoplay';
 const SKELETON = skeletonRatios(6).map((ar) => gridTile(ar, 1));
 const REFRESH_MS = 20000;
 const MAX_REFRESH_MS = 60000;
@@ -36,6 +37,7 @@ const posts = ref<Post[]>([]);
 const status = ref<LoadStatus>('loading');
 const updatedAt = ref(0);
 const textMode = ref(stored.get(TEXT_KEY) === '1');
+const autoplay = ref(stored.get(AUTOPLAY_KEY) !== '0');
 const viewerNo = ref<number | null>(null);
 const state = ref<'live' | 'closed' | 'archived' | 'deleted'>('live');
 const scroller = ref<HTMLElement | null>(null);
@@ -171,6 +173,11 @@ async function setTextMode(on: boolean): Promise<void> {
   els.find((el) => Number(el.dataset.no) >= anchor)?.scrollIntoView({ block: 'start' });
 }
 
+function setAutoplay(on: boolean): void {
+  autoplay.value = on;
+  stored.set(AUTOPLAY_KEY, on ? '1' : '0');
+}
+
 async function jumpToPost(n: number): Promise<void> {
   viewer.value = null;
   if (!textMode.value) await setTextMode(true);
@@ -227,6 +234,10 @@ onBeforeUnmount(() => {
             <div v-else-if="card && card.images != null && card.replies != null" class="mono muted small">{{ stats(card.images, card.replies) }}</div>
             <span v-else-if="status === 'loading'" class="sk sk-line threadbar__sk-meta"></span>
           </div>
+          <button type="button" class="btn" :aria-pressed="autoplay" @click="setAutoplay(!autoplay)">
+            <span class="switch" aria-hidden="true"></span>
+            Autoplay
+          </button>
           <button type="button" class="btn" :aria-pressed="textMode" @click="setTextMode(!textMode)">
             <span class="switch" aria-hidden="true"></span>
             Text
@@ -235,9 +246,6 @@ onBeforeUnmount(() => {
             <a :href="external" target="_blank" rel="noopener noreferrer" class="btn btn--icon" :aria-label="source ? `Open on ${source}` : 'Open on 4chan'">
               <ExternalLink class="ic" />
             </a>
-            <RouterLink :to="base" class="btn btn--icon" aria-label="Close thread">
-              <X class="ic" />
-            </RouterLink>
           </div>
         </div>
       </div>
@@ -281,7 +289,7 @@ onBeforeUnmount(() => {
           :aria-label="t.m.name"
           @click="viewer = i"
         >
-          <MediaThumb :m="t.m" />
+          <MediaThumb :m="t.m" :hover-play="!autoplay" />
         </button>
         <div class="justify__end" aria-hidden="true"></div>
       </div>
