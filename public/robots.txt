@@ -4,3 +4,6 @@ Allow: /api/boards.json
 Allow: /api/*/catalog.json
 Disallow: /api/
 Disallow: /img/
+
+User-agent: Twitterbot
+Allow: /

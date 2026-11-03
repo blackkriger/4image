@@ -1,0 +1,16 @@
+[Unit]
+Description=4image link previews
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/node /opt/4image-preview/preview.mjs
+Environment=PORT=3104
+Environment=HTML_PATH=/var/www/4image/index.html
+User=www-data
+Group=www-data
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

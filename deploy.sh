@@ -16,4 +16,6 @@ tar -C dist -cf - . | ssh "$DEPLOY_HOST" "
   mv $DEPLOY_ROOT.new $DEPLOY_ROOT
 "
 
+ssh "$DEPLOY_HOST" "mkdir -p /opt/4image-preview && cat > /opt/4image-preview/preview.mjs && systemctl restart 4image-preview" < server/preview.mjs
+
 curl -fsS -o /dev/null -w "%{http_code} $DEPLOY_URL\n" "$DEPLOY_URL"
