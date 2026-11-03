@@ -873,6 +873,7 @@ img.media[data-failed] {
 }
 
 .post__thumb {
+  position: relative;
   flex: none;
 }
 

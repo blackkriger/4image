@@ -4,7 +4,8 @@ import { CornerDownRight } from 'lucide-vue-next';
 import type { Post } from '../lib/api';
 import { formatSize, type Media } from '../lib/media';
 import { plainText, postBody } from '../lib/text';
-import LazyImage from './LazyImage.vue';
+import { autoplay } from '../lib/autoplay';
+import MediaThumb from './MediaThumb.vue';
 
 const props = defineProps<{ post: Post; media: Media | null; op: number; backlinks?: number[] }>();
 const emit = defineEmits<{ (e: 'open', no: number): void }>();
@@ -29,7 +30,7 @@ const thumb = computed(() => {
   </div>
   <div class="post__main">
     <button v-if="media && thumb" type="button" class="post__thumb" :style="thumb" :aria-label="`Open ${media.name}`" @click="emit('open', post.no)">
-      <LazyImage :src="media.video ? media.thumb : media.src" :thumb="media.thumb" />
+      <MediaThumb :m="media" :hover-play="!autoplay" />
     </button>
     <div class="postbody" v-html="body"></div>
   </div>
