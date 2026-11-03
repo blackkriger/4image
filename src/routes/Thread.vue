@@ -102,8 +102,8 @@ async function load(): Promise<boolean> {
     return changed;
   } catch (e) {
     if (b !== board.value || n !== no.value || a !== archive.value) return false;
-    if (status.value === 'ready' && failStatus(e) === 'missing') state.value = 'deleted';
-    else status.value = failStatus(e);
+    if (status.value !== 'ready') status.value = failStatus(e);
+    else if (failStatus(e) === 'missing') state.value = 'deleted';
     return false;
   }
 }
