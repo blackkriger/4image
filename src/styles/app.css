@@ -797,6 +797,7 @@ button {
 }
 
 .tile {
+  position: relative;
   min-width: 0;
 }
 
@@ -811,6 +812,12 @@ button {
 
 .media[data-near] {
   background-image: var(--thumb);
+}
+
+.media--frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .nopic,
