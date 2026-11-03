@@ -738,10 +738,12 @@ button {
 .slide-enter-from,
 .slide-leave-to {
   width: 0;
-  margin-left: -16px;
+  margin-left: -6px;
   opacity: 0;
 }
 
+.threadbar__start,
+.threadbar__toggles,
 .threadbar__nav {
   display: flex;
   gap: 6px;
@@ -1162,14 +1164,23 @@ img.media[data-failed] {
     gap: 8px 6px;
   }
 
-  .slide-enter-from,
-  .slide-leave-to {
-    margin-left: -6px;
-  }
-
   .threadbar__title {
     order: -1;
     flex-basis: 100%;
+  }
+
+  .threadbar__toggles {
+    order: -1;
+    flex-basis: 100%;
+  }
+
+  .threadbar__toggles .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .threadbar__nav {
+    margin-left: auto;
   }
 
   .threadbar .btn {

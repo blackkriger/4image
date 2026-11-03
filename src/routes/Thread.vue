@@ -216,15 +216,17 @@ onBeforeUnmount(() => {
       <TopBar :source="source" />
       <div class="threadbar">
         <div class="wrap wrap--full threadbar__in">
-          <RouterLink :to="base" class="btn">
-            <ChevronLeft class="ic" />
-            <span class="threadbar__back">Catalog</span>
-          </RouterLink>
-          <Transition name="slide">
-            <button v-if="scrolled" type="button" class="btn btn--icon" aria-label="Back to top" @click="toTop">
-              <ArrowUp class="ic" />
-            </button>
-          </Transition>
+          <div class="threadbar__start">
+            <RouterLink :to="base" class="btn">
+              <ChevronLeft class="ic" />
+              <span class="threadbar__back">Catalog</span>
+            </RouterLink>
+            <Transition name="slide">
+              <button v-if="scrolled" type="button" class="btn btn--icon" aria-label="Back to top" @click="toTop">
+                <ArrowUp class="ic" />
+              </button>
+            </Transition>
+          </div>
           <div class="threadbar__title">
             <h1 v-if="title" @mouseenter="hintIfCut($event, title)">{{ title }}</h1>
             <span v-else-if="status === 'loading'" class="sk sk-line threadbar__sk-title"></span>
@@ -234,14 +236,16 @@ onBeforeUnmount(() => {
             <div v-else-if="card && card.images != null && card.replies != null" class="mono muted small">{{ stats(card.images, card.replies) }}</div>
             <span v-else-if="status === 'loading'" class="sk sk-line threadbar__sk-meta"></span>
           </div>
-          <button type="button" class="btn" :aria-pressed="autoplay" @click="setAutoplay(!autoplay)">
-            <span class="switch" aria-hidden="true"></span>
-            Autoplay
-          </button>
-          <button type="button" class="btn" :aria-pressed="textMode" @click="setTextMode(!textMode)">
-            <span class="switch" aria-hidden="true"></span>
-            Text
-          </button>
+          <div class="threadbar__toggles">
+            <button type="button" class="btn" :aria-pressed="autoplay" @click="setAutoplay(!autoplay)">
+              <span class="switch" aria-hidden="true"></span>
+              Autoplay
+            </button>
+            <button type="button" class="btn" :aria-pressed="textMode" @click="setTextMode(!textMode)">
+              <span class="switch" aria-hidden="true"></span>
+              Text
+            </button>
+          </div>
           <div class="threadbar__nav">
             <a :href="external" target="_blank" rel="noopener noreferrer" class="btn btn--icon" :aria-label="source ? `Open on ${source}` : 'Open on 4chan'">
               <ExternalLink class="ic" />
