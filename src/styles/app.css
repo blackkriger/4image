@@ -1203,10 +1203,6 @@ img.media[data-failed] {
     justify-content: center;
   }
 
-  .threadbar__nav {
-    margin-left: auto;
-  }
-
   .threadbar .btn {
     height: 40px;
     padding: 0 10px;
