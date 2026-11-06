@@ -31,6 +31,7 @@ const APPEAR_MS = 40;
 const APPEAR_MAX = 24;
 const SEARCH_MS = 400;
 const SEARCH_MIN = 2;
+const COUNTS_MS = 60000;
 
 const route = useRoute();
 const board = computed(() => route.params.board as string);
@@ -38,10 +39,12 @@ const archive = computed(() => !!route.meta.archive);
 const base = computed(() => boardPath(board.value, archive.value));
 const title = ref('');
 const cards = ref<ThreadCard[]>([]);
+const counts = ref(new Map<number, Pick<ThreadCard, 'replies' | 'images'>>());
 const total = ref<number | null>(null);
 const appear = new Map<number, number>();
 const revealed = ref(0);
 let pump = 0;
+let countsTimer = 0;
 let fetchedAt = 0;
 const status = ref<LoadStatus>('loading');
 const savedSort = stored.get(SORT_KEY);
@@ -66,6 +69,7 @@ async function load(): Promise<void> {
   const b = board.value;
   status.value = 'loading';
   cards.value = [];
+  counts.value = new Map();
   appear.clear();
   total.value = null;
   if (b !== titled) title.value = '';
@@ -166,6 +170,29 @@ function rowClosed(i: number): boolean {
   return !!el && !!last && el.offsetTop < last.offsetTop;
 }
 
+async function refreshCounts(): Promise<void> {
+  if (archive.value || status.value !== 'ready' || document.visibilityState !== 'visible') return;
+  const id = run;
+  const b = board.value;
+  try {
+    const threads = await loadCatalog(b);
+    if (id !== run) return;
+    const known = new Map(cards.value.map((c) => [c.no, c]));
+    const next = new Map(counts.value);
+    let changed = false;
+    for (const t of threads) {
+      const card = known.get(t.no);
+      if (!card) continue;
+      const was = next.get(t.no) ?? card;
+      const { replies, images } = toCard(b, t);
+      if (replies === was.replies && images === was.images) continue;
+      next.set(t.no, { replies, images });
+      changed = true;
+    }
+    if (changed) counts.value = next;
+  } catch {}
+}
+
 function stagger(list: ThreadCard[]): ThreadCard[] {
   list.forEach((c, i) => appear.set(c.no, Math.min(i, APPEAR_MAX) * APPEAR_MS));
   return list;
@@ -199,10 +226,12 @@ watch(query, () => {
 
 onMounted(() => {
   pump = window.setInterval(tick, REVEAL_MS);
+  countsTimer = window.setInterval(refreshCounts, COUNTS_MS);
 });
 onBeforeUnmount(() => {
   run++;
   clearInterval(pump);
+  clearInterval(countsTimer);
   clearTimeout(searchTimer);
 });
 
@@ -228,7 +257,10 @@ const shown = computed(() => {
   if (sort.value === 'images') list.sort((a, b) => (b.images ?? 0) - (a.images ?? 0));
   else if (sort.value === 'replies') list.sort((a, b) => (b.replies ?? 0) - (a.replies ?? 0));
   else if (sort.value === 'new') list.sort((a, b) => b.no - a.no);
-  return list;
+  return list.map((c) => {
+    const n = counts.value.get(c.no);
+    return n ? { ...c, ...n } : c;
+  });
 });
 </script>
 
