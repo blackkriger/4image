@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { ExternalLink, X } from 'lucide-vue-next';
+import { CornerDownRight, ExternalLink, GripHorizontal, X } from 'lucide-vue-next';
 import { formatSize, type Media } from '../lib/media';
 import type { Post } from '../lib/api';
 import { useQuotePopups } from '../lib/popups';
-import { postBody, postLink } from '../lib/text';
+import { backlinksOf, postBody, postLink } from '../lib/text';
 import { stored } from '../lib/storage';
 import ViewerStrip from './ViewerStrip.vue';
 import QuotePopups from './QuotePopups.vue';
@@ -59,6 +59,8 @@ function onMediaError(): void {
 }
 const text = computed(() => (current.value && showText.value ? postBody(props.byNo.get(current.value.no)?.com ?? '', props.op) : ''));
 const mediaByNo = computed(() => new Map(props.items.map((m) => [m.no, m])));
+const backlinks = computed(() => backlinksOf(props.byNo.values()));
+const replies = computed(() => (current.value && showText.value ? (backlinks.value.get(current.value.no) ?? []) : []));
 const quotes = useQuotePopups(() => props.byNo);
 
 const router = useRouter();
@@ -146,7 +148,9 @@ function onPointerUp(ev: PointerEvent): void {
 let postDrag: { sx: number; sy: number; bx: number; by: number } | null = null;
 
 function onPostDown(ev: PointerEvent): void {
-  if (ev.button !== 0 || (ev.target as Element).closest('a')) return;
+  const target = ev.target as Element;
+  if (ev.button !== 0 || target.closest('a')) return;
+  if (ev.pointerType !== 'mouse' && !target.closest('.viewer__grip')) return;
   postDrag = { sx: ev.clientX, sy: ev.clientY, bx: postPos.value.x, by: postPos.value.y };
   (ev.currentTarget as HTMLElement).setPointerCapture(ev.pointerId);
 }
@@ -245,9 +249,18 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
             @pointerup="onPostUp"
             @pointercancel="onPostUp"
           >
-            <span class="mono viewer__dim">No.{{ current.no }}</span>
-            <div v-if="text" class="postbody" v-html="text"></div>
-            <span v-else class="viewer__dim">No text</span>
+            <div class="viewer__head">
+              <span class="mono viewer__dim">No.{{ current.no }}</span>
+              <GripHorizontal class="ic viewer__grip" aria-hidden="true" />
+            </div>
+            <div class="viewer__content">
+              <div v-if="text" class="postbody" v-html="text"></div>
+              <span v-else class="viewer__dim">No text</span>
+              <div v-if="replies.length" class="post__backlinks mono">
+                <CornerDownRight class="ic" aria-hidden="true" />
+                <a v-for="n in replies" :key="n" :href="`#p${n}`" class="quotelink">&gt;&gt;{{ n }}</a>
+              </div>
+            </div>
           </aside>
           <QuotePopups :popups="quotes.shown.value" :by-no="byNo" :media="mediaByNo" :op="op" @open="openMedia" />
         </div>
